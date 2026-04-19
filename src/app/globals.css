@@ -611,3 +611,28 @@ a { color: inherit; text-decoration: none; }
 .cal-event.health { color: var(--ok); border-left: 2px solid var(--ok); padding-left: 4px; }
 .cal-event.work { color: var(--ink-2); border-left: 2px solid var(--ink-4); padding-left: 4px; }
 .cal-event.health-flag { color: var(--warn); border-left: 2px solid var(--warn); padding-left: 4px; }
+
+/* activity feed */
+.feed { display: flex; flex-direction: column; }
+.feed-item { display: grid; grid-template-columns: 8px 1fr; gap: 12px; padding: 10px 16px; border-top: 1px solid var(--hair); align-items: start; }
+.feed-item:first-child { border-top: 0; }
+.feed-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+.feed-dot.directive { background: var(--ok); }
+.feed-dot.countersign { background: var(--ok); }
+.feed-dot.agent-flag { background: var(--warn); }
+.feed-dot.protocol { background: var(--accent); }
+.feed-dot.goal { background: var(--accent); }
+.feed-dot.checkin { background: var(--ink-3); }
+.feed-dot.share { background: var(--ink-2); }
+.feed-dot.sync { background: var(--ink-4); }
+.feed-title { font-size: 12px; color: var(--ink); line-height: 1.4; }
+.feed-body { font-size: 11px; color: var(--ink-2); line-height: 1.5; margin-top: 2px; }
+.feed-when { font-family: var(--mono); font-size: 9px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 3px; }
+.feed-actor { display: inline-block; font-family: var(--mono); font-size: 8px; text-transform: uppercase; letter-spacing: 0.08em; padding: 1px 5px; border: 1px solid var(--hair-strong); color: var(--ink-3); margin-right: 6px; vertical-align: middle; }
+.feed-actor.darcy { color: var(--ok); border-color: var(--ok); }
+.feed-actor.agent { color: var(--warn); border-color: var(--warn); }
+
+/* quarterly review banner */
+.qr-banner { border: 1px solid var(--warn); padding: 16px 20px; display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center; background: color-mix(in oklab, var(--warn) 5%, transparent); }
+.qr-banner .qr-label { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--warn); margin-bottom: 4px; }
+.qr-banner .qr-title { font-family: var(--serif); font-size: 15px; font-weight: 300; color: var(--ink); }

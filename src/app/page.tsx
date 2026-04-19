@@ -3,12 +3,14 @@
 import { DATA } from "@/data/james"
 import { useApp } from "@/components/RoleContext"
 import { Spark, LifecycleChip } from "@/components/Primitives"
+import ActivityFeed from "@/components/ActivityFeed"
+import QuarterlyReview from "@/components/QuarterlyReview"
 
 export default function TodayPage() {
   const { role } = useApp()
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: "24px 32px", maxWidth: 1200 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: "24px 32px", maxWidth: 1300 }}>
 
       {/* North-star */}
       <div className="northstar">
@@ -39,6 +41,9 @@ export default function TodayPage() {
           </div>
         </div>
       </div>
+
+      {/* Quarterly review banner — auto-surfaced at quarter close */}
+      <QuarterlyReview />
 
       {/* Morning narrative */}
       <div className="panel" style={{ padding: "20px 24px" }}>
@@ -140,8 +145,8 @@ export default function TodayPage() {
         })}
       </div>
 
-      {/* Calendar + Coach push */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      {/* Three-column: calendar · coach push · activity feed */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 20 }}>
 
         {/* Calendar strip */}
         <div className="panel calstrip">
@@ -191,6 +196,9 @@ export default function TodayPage() {
             </div>
           ))}
         </div>
+
+        {/* Activity feed */}
+        <ActivityFeed compact />
       </div>
 
       {/* Course corrector */}

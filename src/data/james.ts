@@ -324,4 +324,37 @@ export const DATA = {
     agentStandingBrief: "Watch ApoB trajectory. Flag any 72-hour HRV deficit >15%. Forward overnight glucose events to Darcy without interrupting Jamie. Prepare pre-quarter protocol draft by 24 Apr.",
     agentBriefIssuedBy: "Darcy · 02 Apr",
   },
+
+  // Activity feed — the live event stream between coach, agent, and client.
+  // visibility: "both" = Jamie + Darcy, "darcy" = Darcy only, "jamie" = Jamie only
+  activityFeed: [
+    { id: "a1",  when: "06:42 · Today",  type: "sync",         actor: "system",  visibility: "both",  title: "Devices synced",                    body: "Garmin · Oura · Withings · 3 sources · 06:41" },
+    { id: "a2",  when: "06:16 · Today",  type: "directive",    actor: "darcy",   visibility: "both",  title: "Directive published",               body: "Board-cycle stress protocol issued to Jamie." },
+    { id: "a3",  when: "06:14 · Today",  type: "countersign",  actor: "darcy",   visibility: "darcy", title: "Agent draft countersigned",          body: "\"Hold intensity today\" — published. Zone-2 substitution added to Jamie's calendar." },
+    { id: "a4",  when: "06:14 · Today",  type: "directive",    actor: "darcy",   visibility: "jamie", title: "Hold intensity — protocol updated",  body: "Darcy has reviewed your signals and updated today's training protocol." },
+    { id: "a5",  when: "05:58 · Today",  type: "agent-flag",   actor: "agent",   visibility: "darcy", title: "Flag raised — autonomic",            body: "HRV −11 ms over 3 nights. RHR +4 bpm. Pattern matches Feb 06. Awaiting your review." },
+    { id: "a6",  when: "Thu 22:40",      type: "agent-flag",   actor: "agent",   visibility: "darcy", title: "Overnight glucose excursion",        body: "+18 mg/dL at 02:14 without food log. Dawn phenomenon possible. Observe one more night." },
+    { id: "a7",  when: "Wed 18:31",      type: "share",        actor: "darcy",   visibility: "both",  title: "Note shared with Dr. Rao",           body: "Chest pressure entry (Mon 13 Apr) forwarded to Dr. Sanjay Rao with Jamie's consent." },
+    { id: "a8",  when: "Wed 07:45",      type: "checkin",      actor: "jamie",   visibility: "both",  title: "Check-in submitted",                body: "Sleep 7 · Mood 6 · Load 8 · tags: foggy, caffeine-heavy" },
+    { id: "a9",  when: "Fri 07:14",      type: "countersign",  actor: "darcy",   visibility: "darcy", title: "ApoB zone-2 recommendation signed",  body: "Modified: 2×45 min this week (not 3). Autonomic flag takes priority." },
+    { id: "a10", when: "Fri 07:14",      type: "directive",    actor: "darcy",   visibility: "jamie", title: "Zone-2 sessions updated",            body: "2×45 min zone-2 this week. Full programme resumes next week if HRV stabilises." },
+    { id: "a11", when: "22 Mar",         type: "protocol",     actor: "darcy",   visibility: "both",  title: "Protocol change · caffeine cutoff",  body: "Post-14:00 caffeine eliminated. Confirmed by 60-night dataset: +20 min deep sleep." },
+    { id: "a12", when: "02 Apr",         type: "protocol",     actor: "darcy",   visibility: "both",  title: "Protocol addition · fibre target",  body: "Psyllium husk + legume logging. ApoB correlation: fibre r=+0.74 vs cardio r=+0.12." },
+    { id: "a13", when: "02 Apr",         type: "goal",         actor: "darcy",   visibility: "both",  title: "North-star confirmed for Q3",        body: "ApoB ≤ 70 mg/dL while HRV > 48 ms. 68 days to next bloods. Sub-goals active." },
+  ],
+
+  // Quarterly review — auto-populated when a quarter closes
+  quarterlyReview: {
+    quarter: "Q1 2026",
+    status: "ready",    // "ready" | "in-progress" | "complete"
+    closedOn: "31 Mar 2026",
+    daysOpen: 20,
+    preparedBy: "Darcy · reviewed agent summary",
+    agenda: [
+      { section: "What we targeted", items: ["ApoB ≤ 85 mg/dL → achieved 84 ✓", "HRV floor > 46 ms → missed, currently 41 ms", "Zone-2 ≥ 180 min/week → averaged 148 min"] },
+      { section: "What moved", items: ["ApoB: 91 → 84 mg/dL (−7). Fibre adherence the lever, not cardio.", "Deep sleep: 54 → 74 min avg after caffeine protocol change.", "Fibrinogen trending up — 318 → 342 mg/dL. Watch closely Q2."] },
+      { section: "What didn't and why", items: ["HRV below floor: board-cycle stress + inadequate pre-quarter taper.", "Zone-2 volume: travel weeks in Jan and Mar dropped totals.", "VO₂max flat: intensity holds (correct) slowed aerobic adaptation."] },
+      { section: "Proposed Q2 targets", items: ["HRV floor ≥ 44 ms (realistic step)", "Fibrinogen < 320 mg/dL", "Zone-2 ≥ 160 min/week (adjusted for board cycles)"] },
+    ],
+  },
 }

@@ -4,6 +4,8 @@ import { useState } from "react"
 import { DATA } from "@/data/james"
 import { useApp } from "@/components/RoleContext"
 import { LifecycleChip } from "@/components/Primitives"
+import ActivityFeed from "@/components/ActivityFeed"
+import QuarterlyReview from "@/components/QuarterlyReview"
 
 function Avatar({ initials, round }: { initials: string; round?: boolean }) {
   return (
@@ -36,6 +38,9 @@ export default function TeamPage() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: "24px 32px", maxWidth: 1100 }}>
+
+      {/* Quarterly review — auto-surfaces at quarter close */}
+      <QuarterlyReview />
 
       {/* Workflow explainer */}
       <div className="panel" style={{ padding: "18px 22px" }}>
@@ -219,6 +224,9 @@ export default function TeamPage() {
           ))}
         </div>
       </div>
+
+      {/* Activity feed */}
+      <ActivityFeed />
 
     </div>
   )
