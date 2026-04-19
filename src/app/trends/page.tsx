@@ -4,6 +4,9 @@ import { useState, useMemo } from "react"
 import { DATA } from "@/data/james"
 import { useApp } from "@/components/RoleContext"
 import { LifecycleChip } from "@/components/Primitives"
+import HeroChart from "@/components/HeroChart"
+import WhatIf from "@/components/WhatIf"
+import { computeSeries, lagCorrelations, WEIGHTS, type MetricKey } from "@/lib/irt"
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar,
   XAxis, YAxis, Tooltip, ReferenceLine, CartesianGrid, Legend,
@@ -117,6 +120,12 @@ export default function TrendsPage() {
   const { role } = useApp()
   const { corr, cards, insights, events, corrInsights, pivotData, pinnedViews } = DATA.trends
 
+  // IRT computation
+  const computed = useMemo(() => computeSeries(DATA.rawTimeSeries), [])
+  const lastDay = computed[computed.length - 1]
+  const eventIndices = DATA.checkin.regimeChanges.map(rc => rc.dayIndex)
+  const lagResults = useMemo(() => lagCorrelations(computed, eventIndices), [computed])
+
   // Period
   const [period, setPeriod] = useState("30d")
 
@@ -168,12 +177,66 @@ export default function TrendsPage() {
         </div>
       </div>
 
+      {/* ── Hero chart (IRT AL score + biomarker overlays) ──────────────── */}
+      <HeroChart computed={computed} eventMarkers={DATA.checkin.regimeChanges.map(rc => ({ dayIndex: rc.dayIndex, label: rc.label, color: rc.color }))} />
+
+      {/* ── What-if simulation ──────────────────────────────────────────── */}
+      <WhatIf currentZ={lastDay.z} currentAL={lastDay.alScore} />
+
+      {/* ── Lag correlation engine ───────────────────────────────────────── */}
+      <div className="panel">
+        <div className="panel-head">
+          <span>Lag cross-correlation · intervention response</span>
+          <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            Days until each biomarker responds to a protocol event
+          </span>
+        </div>
+        <div style={{ padding: "16px 20px", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12 }}>
+          {lagResults
+            .filter(lr => Math.abs(lr.peakR) > 0.05)
+            .sort((a, b) => Math.abs(b.peakR) - Math.abs(a.peakR))
+            .slice(0, 10)
+            .map(lr => (
+              <div key={lr.key} style={{ borderLeft: `2px solid ${Math.abs(lr.peakR) > 0.3 ? "var(--warn)" : "var(--hair-strong)"}`, paddingLeft: 10 }}>
+                <div style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--ink-3)", marginBottom: 3 }}>
+                  {lr.label}
+                </div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                  <span style={{ fontFamily: "var(--mono)", fontSize: 16, color: Math.abs(lr.peakR) > 0.3 ? "var(--warn)" : "var(--ink-2)", letterSpacing: "-0.02em" }}>
+                    {lr.peakLag}d
+                  </span>
+                  <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)" }}>
+                    r={lr.peakR > 0 ? "+" : ""}{lr.peakR.toFixed(2)}
+                  </span>
+                </div>
+                <div style={{ display: "flex", gap: 2, marginTop: 6 }}>
+                  {lr.lags.map((r, i) => (
+                    <div
+                      key={i}
+                      title={`Lag ${i}d: r=${r.toFixed(2)}`}
+                      style={{
+                        width: 10, height: Math.abs(r) * 24,
+                        background: i === lr.peakLag ? "var(--warn)" : "var(--hair-strong)",
+                        alignSelf: "flex-end",
+                        minHeight: 2,
+                      }}
+                    />
+                  ))}
+                </div>
+                <div style={{ fontFamily: "var(--mono)", fontSize: 7, color: "var(--ink-4)", marginTop: 3, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  lag 0 ──────── 7d
+                </div>
+              </div>
+            ))}
+        </div>
+      </div>
+
       {/* ── Correlation matrix ───────────────────────────────────────────── */}
       <div className="panel">
         <div className="panel-head">
           <span>Cross-signal correlation engine</span>
           <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-            Click any cell · {period} Pearson r · warm = inverse · cool = positive
+            Click any cell · {period} · warm = co-elevation · cool = inverse
           </span>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 0 }}>

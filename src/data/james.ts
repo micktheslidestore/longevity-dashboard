@@ -2,6 +2,8 @@
 // Coach: Darcy O'Sullivan
 // Devices: Garmin Fenix 8 · Oura Ring Gen 4 · Withings Scale · Withings BPM Core
 
+import type { DailyRecord } from "@/lib/irt"
+
 function seeded(seed: number) {
   let s = seed
   return () => {
@@ -18,6 +20,42 @@ function series(n: number, base: number, drift: number, noise: number, seedOffse
     out.push(base + drift * t + (r() - 0.5) * noise)
   }
   return out
+}
+
+function genTimeSeries(): DailyRecord[] {
+  const n = 30
+  const hrv            = series(n, 54,    -13,   4,    20)
+  const rhr            = series(n, 48,      4,   1.5,  21)
+  const sleepEff       = series(n, 87,     -5,   3,    22)
+  const deepSleep      = series(n, 72,    -18,   8,    23)
+  const cortisol       = series(n, 15.0,   3.4,  1.2,  24)
+  const skinTemp       = series(n,  0,     0.4,  0.12, 25)
+  const glucoseSD      = series(n, 15.1,  -0.9,  1.4,  26)
+  const hsCRP          = series(n,  0.9,  -0.2,  0.08, 27)
+  const fibrinogen     = series(n, 318,    24,   8,    28)
+  const fastingInsulin = series(n,  7.1,  -0.9,  0.4,  29)
+  const vo2max         = series(n, 47.4,   0.4,  0.3,  30)
+  const bodyFat        = series(n, 15.2,  -0.4,  0.2,  31)
+
+  return Array.from({ length: n }, (_, i) => {
+    const d = new Date(2026, 2, 21)
+    d.setDate(d.getDate() + i)
+    return {
+      date:            d.toISOString().slice(0, 10),
+      hrv:             +Math.max(25, hrv[i]).toFixed(1),
+      rhr:             +Math.max(40, rhr[i]).toFixed(1),
+      sleepEff:        +Math.max(55, Math.min(98, sleepEff[i])).toFixed(1),
+      deepSleep:       Math.round(Math.max(28, deepSleep[i])),
+      cortisol:        +Math.max(6,  Math.min(22, cortisol[i])).toFixed(1),
+      skinTemp:        +skinTemp[i].toFixed(2),
+      glucoseSD:       +Math.max(8,  glucoseSD[i]).toFixed(1),
+      hsCRP:           +Math.max(0.1, hsCRP[i]).toFixed(2),
+      fibrinogen:      Math.round(Math.max(200, fibrinogen[i])),
+      fastingInsulin:  +Math.max(2, fastingInsulin[i]).toFixed(1),
+      vo2max:          +Math.max(38, vo2max[i]).toFixed(1),
+      bodyFat:         +Math.max(10, Math.min(30, bodyFat[i])).toFixed(1),
+    }
+  })
 }
 
 export const DATA = {
@@ -421,6 +459,9 @@ export const DATA = {
     { id: "a12", when: "02 Apr",         type: "protocol",     actor: "darcy",   visibility: "both",  title: "Protocol addition · fibre target",  body: "Psyllium husk + legume logging. ApoB correlation: fibre r=+0.74 vs cardio r=+0.12." },
     { id: "a13", when: "02 Apr",         type: "goal",         actor: "darcy",   visibility: "both",  title: "North-star confirmed for Q3",        body: "ApoB ≤ 70 mg/dL while HRV > 48 ms. 68 days to next bloods. Sub-goals active." },
   ],
+
+  // 30-day IRT input series: index 0 = Mar 21 2026, index 29 = Apr 19 2026
+  rawTimeSeries: genTimeSeries(),
 
   // Quarterly review — auto-populated when a quarter closes
   quarterlyReview: {
