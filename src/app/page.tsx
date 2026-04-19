@@ -53,16 +53,43 @@ export default function TodayPage() {
           {DATA.signal.narrative.rationale}
         </p>
         <div style={{ marginTop: 12, fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ok)" }}>
-          {DATA.signal.narrative.by}
+          {role === "darcy" ? DATA.signal.narrative.byCoach : DATA.signal.narrative.by}
         </div>
       </div>
 
       {/* Directives */}
       <div className="panel">
         <div className="panel-head">
-          <span>Directives</span>
+          <span>Today&apos;s directive</span>
+          {role === "darcy" && (
+            <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--warn)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              {DATA.agentDrafts.length} draft{DATA.agentDrafts.length !== 1 ? "s" : ""} awaiting your review
+            </span>
+          )}
         </div>
         <div className="directive-list">
+          {/* Darcy sees agent drafts at the top of his workspace */}
+          {role === "darcy" && DATA.agentDrafts.map((d, i) => (
+            <div key={`draft-${i}`} className="directive-row" style={{ background: "color-mix(in oklab, var(--warn) 4%, transparent)" }}>
+              <div className="dg">
+                <LifecycleChip lc={d.lifecycle} />
+              </div>
+              <div>
+                <div className="d-head">
+                  <span className="who">Agent</span>
+                  <span>Draft · awaiting your countersignature</span>
+                </div>
+                <div className="d-body agent-tone">{d.body}</div>
+                <div className="d-meta">{d.meta}</div>
+                <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                  <button style={{ fontFamily: "var(--mono)", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", border: "1px solid var(--ink)", padding: "5px 12px", background: "var(--ink)", color: "var(--bg)", cursor: "pointer" }}>Countersign</button>
+                  <button style={{ fontFamily: "var(--mono)", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", border: "1px solid var(--hair-strong)", padding: "5px 12px", color: "var(--ink-2)", background: "transparent", cursor: "pointer" }}>Edit &amp; sign</button>
+                  <button style={{ fontFamily: "var(--mono)", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", border: "1px solid var(--hair-strong)", padding: "5px 12px", color: "var(--alert)", background: "transparent", cursor: "pointer" }}>Discard</button>
+                </div>
+              </div>
+            </div>
+          ))}
+          {/* Signed directives visible to both */}
           {DATA.directive.map((d, i) => (
             <div key={i} className="directive-row">
               <div className="dg">
@@ -73,7 +100,7 @@ export default function TodayPage() {
                   <span className="who">{d.who}</span>
                   <span>{d.role}</span>
                 </div>
-                <div className={`d-body${d.who === "Agent" ? " agent-tone" : ""}`}>{d.body}</div>
+                <div className="d-body">{d.body}</div>
                 <div className="d-meta">{d.meta}</div>
               </div>
             </div>

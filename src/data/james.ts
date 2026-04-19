@@ -38,7 +38,8 @@ export const DATA = {
       title: "You are carrying three nights of incomplete recovery.",
       rationale:
         "Resting HR has been +4 bpm for three consecutive nights, HRV sits 11 ms below your 30-day mean, and skin temperature has crept +0.4 °C. The signature resembles the early phase of your February setback. Metabolic and inflammatory markers remain stable. Convert today's scheduled lactate session into zone-2 or mobility. Protect sleep onset. Reassess Saturday morning. No dietary changes — continue omega-3, berberine, and the rotating sleep-aid protocol.",
-      by: "Agent draft · countersigned Darcy O'Sullivan",
+      by: "Darcy O'Sullivan",
+      byCoach: "Darcy O'Sullivan · agent-assisted",
       stamp: "06:14 · 19 Apr",
     },
     index: {
@@ -115,9 +116,14 @@ export const DATA = {
     { kind: "protocol", icon: "draft", title: "New supplement — creatine 5g", body: "Proposed addition. Reviewed by agent, awaits your consent before adding to protocol.", by: "Agent draft → Darcy", action: "Approve" },
   ],
 
+  // directive entries are what Jamie sees — only Darcy-signed items, never agent drafts
   directive: [
-    { who: "Darcy", role: "Coach", lifecycle: "signed", body: "Agree with the hold. Jamie — write in this morning's check-in how board-cycle stress feels different this quarter than Q1. We may need to formalise a pre-quarter protocol before the July cycle.", meta: "Signed 06:14 · 17 Apr" },
-    { who: "Agent", role: "Agent draft", lifecycle: "draft", body: "Resting HR elevation over the past 72 hours correlates with the board prep cycle (r = +0.71 across the last four quarters). Suggest an 8-minute breathing protocol at 14:45, ahead of the coaching call.", meta: "Drafted 05:58 · awaiting Darcy" },
+    { who: "Darcy", role: "Coach", lifecycle: "signed", body: "Agree with the hold. Jamie — write in this morning's check-in how board-cycle stress feels different this quarter than Q1. We may need to formalise a pre-quarter protocol before the July cycle.", meta: "Darcy O'Sullivan · 06:14 · 17 Apr" },
+    { who: "Darcy", role: "Coach", lifecycle: "signed", body: "Your resting HR elevation over the past 72 hours is tracking the board prep cycle — this pattern has appeared ahead of every major board event this year. An 8-minute breathing sequence at 14:45 today, before the coaching call, will help.", meta: "Darcy O'Sullivan · 06:16 · 17 Apr" },
+  ],
+  // agent drafts visible to Darcy only (in his inbox/team workspace)
+  agentDrafts: [
+    { who: "Agent", lifecycle: "draft", body: "Resting HR elevation over the past 72 hours correlates with the board prep cycle (r = +0.71 across the last four quarters). Suggest an 8-minute breathing protocol at 14:45, ahead of the coaching call.", meta: "Drafted 05:58 · awaiting Darcy" },
   ],
 
   // Course corrector — the feedback loop: recommendation → action → outcome
@@ -300,7 +306,7 @@ export const DATA = {
       name: "Darcy O'Sullivan, MS",
       role: "Longevity coach · since Aug 2024",
       initials: "DO",
-      bio: "Works with 11 principals. Clinical background in exercise physiology and psychoneuroimmunology. Protocol lead — all agent drafts pass through her before reaching you.",
+      bio: "Works with 11 principals. Clinical background in exercise physiology and psychoneuroimmunology. Protocol lead — all agent drafts pass through him before reaching you.",
     },
     thread: [
       { who: "agent", name: "Agent", chip: "draft", when: "Fri 06:58", body: "Cross-referencing the last six weeks: the ApoB drop (−7 mg/dL) and fibrinogen rise (+24) both correlate with dropped zone-2 minutes (−34% month-over-month). Recommend restoring 3×45 min zone-2 before the July draw.", refs: ["ApoB ↓ 91→84", "Fibrinogen ↑ 318→342", "Zone-2 minutes ↓ 34%"], counter: null },

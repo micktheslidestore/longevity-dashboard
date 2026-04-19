@@ -76,24 +76,61 @@ function LabRail({ points, range, target, unit }: {
 export default function MedicalPage() {
   const { pathology } = DATA
   const [openGroup, setOpenGroup] = useState<string | null>(null)
+  const [shareToast, setShareToast] = useState(false)
+
+  function handleShare() {
+    setShareToast(true)
+    setTimeout(() => setShareToast(false), 2800)
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: "24px 32px", maxWidth: 1100 }}>
 
-      {/* Draw info */}
-      <div style={{ display: "flex", gap: 20 }}>
-        <div className="panel" style={{ flex: 1, padding: "14px 18px" }}>
-          <div style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-3)" }}>Last draw</div>
-          <div style={{ fontFamily: "var(--mono)", fontSize: 14, color: "var(--ink)", marginTop: 4 }}>{pathology.lastDraw}</div>
+      {/* Page header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", paddingBottom: 16, borderBottom: "1px solid var(--hair)" }}>
+        <div>
+          <h1 style={{ fontFamily: "var(--serif)", fontSize: 34, fontWeight: 300, letterSpacing: "-0.02em", color: "var(--ink)", margin: 0, lineHeight: 1 }}>Medical.</h1>
+          <div style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--ink-3)", marginTop: 8 }}>
+            Last draw {pathology.lastDraw} · Next scheduled {pathology.nextDraw} · {DATA.user.last.toUpperCase()}, {DATA.user.first.toUpperCase()} · DOB 04 Nov 1971
+          </div>
         </div>
-        <div className="panel" style={{ flex: 1, padding: "14px 18px" }}>
-          <div style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-3)" }}>Next draw</div>
-          <div style={{ fontFamily: "var(--mono)", fontSize: 14, color: "var(--ink)", marginTop: 4 }}>{pathology.nextDraw}</div>
+        <div style={{ display: "flex", gap: 0, position: "relative" }}>
+          <button
+            onClick={handleShare}
+            style={{ fontFamily: "var(--mono)", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", border: "1px solid var(--hair-strong)", borderRight: 0, padding: "9px 16px", color: "var(--ink-2)", background: "transparent", cursor: "pointer" }}
+          >
+            Share with clinician
+          </button>
+          <button
+            style={{ fontFamily: "var(--mono)", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", border: "1px solid var(--hair-strong)", borderRight: 0, padding: "9px 16px", color: "var(--ink-2)", background: "transparent", cursor: "pointer" }}
+          >
+            Export PDF
+          </button>
+          <button
+            style={{ fontFamily: "var(--mono)", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", border: "1px solid var(--ink)", padding: "9px 16px", background: "var(--ink)", color: "var(--bg)", cursor: "pointer" }}
+          >
+            Generate quarterly report
+          </button>
+          {shareToast && (
+            <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, background: "var(--panel-2)", border: "1px solid var(--hair-strong)", padding: "8px 14px", fontFamily: "var(--mono)", fontSize: 10, color: "var(--ok)", letterSpacing: "0.08em", textTransform: "uppercase", whiteSpace: "nowrap", zIndex: 10 }}>
+              Draft prepared for Dr. Sanjay Rao · review before sending
+            </div>
+          )}
         </div>
-        <div className="panel" style={{ flex: 1, padding: "14px 18px" }}>
-          <div style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-3)" }}>Risk factors</div>
-          <div style={{ fontFamily: "var(--serif)", fontSize: 12, color: "var(--warn)", marginTop: 4, fontStyle: "italic" }}>{DATA.user.risk}</div>
-        </div>
+      </div>
+
+      {/* Risk strip */}
+      <div style={{ display: "flex", gap: 0, borderTop: 0 }}>
+        {[
+          { l: "Risk profile", v: DATA.user.risk, color: "var(--warn)" },
+          { l: "Last draw", v: pathology.lastDraw, color: "var(--ink)" },
+          { l: "Next draw", v: pathology.nextDraw, color: "var(--ink)" },
+        ].map(({ l, v, color }) => (
+          <div key={l} className="panel" style={{ flex: 1, padding: "12px 16px", borderRight: 0 }}>
+            <div style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-3)" }}>{l}</div>
+            <div style={{ fontFamily: l === "Risk profile" ? "var(--serif)" : "var(--mono)", fontSize: 12, color, marginTop: 4, fontStyle: l === "Risk profile" ? "italic" : "normal" }}>{v}</div>
+          </div>
+        ))}
       </div>
 
       {/* Lab panels */}
