@@ -301,6 +301,17 @@ export const DATA = {
   },
 
   checkin: {
+    streak: 14,
+    todayDone: false,  // today not yet submitted — drives completion signpost
+
+    // Protocol / regime changes to overlay on the 30-day strip
+    // dayIndex 0 = Mar 21, 29 = Apr 19 (yesterday)
+    regimeChanges: [
+      { dayIndex: 1,  label: "Caffeine cutoff",   type: "protocol",   color: "var(--ok)" },
+      { dayIndex: 12, label: "Fibre protocol",     type: "protocol",   color: "var(--ok)" },
+      { dayIndex: 27, label: "Hold intensity",     type: "corrector",  color: "var(--warn)" },
+    ],
+
     today: {
       sliders: [
         { q: "How well did you sleep?", val: 6, min: 0, max: 10, left: "Broken", right: "Deep" },
@@ -315,6 +326,41 @@ export const DATA = {
       },
       note: "Woke at 04:40 with the same board-call loop. Got up, made tea, did the 4-7-8 protocol twice. Back to sleep for maybe 40 minutes. The chest tightness Darcy and I talked about on Monday is back — not pain, pressure.",
     },
+
+    // 30-day daily history for strip drill-down. Index 0 = Mar 21, 29 = Apr 19.
+    daily: [
+      { date: "21 Mar", dow: "Sat", band: "md", sleep: 7, mood: 7, load: 4,  tags: ["rested"], note: null },
+      { date: "22 Mar", dow: "Sun", band: "md", sleep: 8, mood: 8, load: 3,  tags: ["rested", "calm"], note: "Good day. Caffeine cutoff protocol starts today — Darcy's call. Let's see." },
+      { date: "23 Mar", dow: "Mon", band: "hi", sleep: 8, mood: 8, load: 5,  tags: ["rested", "sharp"], note: "First Monday without afternoon coffee. Actually fine. Meeting went well." },
+      { date: "24 Mar", dow: "Tue", band: "hi", sleep: 8, mood: 8, load: 5,  tags: ["sharp", "calm"], note: null },
+      { date: "25 Mar", dow: "Wed", band: "md", sleep: 7, mood: 7, load: 6,  tags: ["calm"], note: null },
+      { date: "26 Mar", dow: "Thu", band: "lo", sleep: 6, mood: 5, load: 8,  tags: ["foggy", "tight-back"], note: "Back locked up in the flight to Edinburgh. Uncomfortable night." },
+      { date: "27 Mar", dow: "Fri", band: "md", sleep: 7, mood: 6, load: 6,  tags: ["travel-lag"], note: null },
+      { date: "28 Mar", dow: "Sat", band: "hi", sleep: 8, mood: 8, load: 3,  tags: ["rested", "calm"], note: "Edinburgh was worth the back. Good reset day." },
+      { date: "29 Mar", dow: "Sun", band: "hi", sleep: 9, mood: 9, load: 2,  tags: ["rested", "calm", "sharp"], note: "Best night in weeks. Deep sleep finally came back. Caffeine protocol working?" },
+      { date: "30 Mar", dow: "Mon", band: "md", sleep: 7, mood: 7, load: 6,  tags: ["wired-tired"], note: null },
+      { date: "31 Mar", dow: "Tue", band: "lo", sleep: 6, mood: 5, load: 9,  tags: ["anxious", "under-recovered"], note: "Quarter end. Can feel the cortisol." },
+      { date: "01 Apr", dow: "Wed", band: "lo", sleep: 5, mood: 4, load: 10, tags: ["anxious", "foggy", "under-recovered"], note: "Worst night of the month. 4am wake-up, couldn't get back. Mind racing." },
+      { date: "02 Apr", dow: "Thu", band: "md", sleep: 7, mood: 6, load: 7,  tags: ["wired-tired", "board-week"], note: "Fibre protocol starts — psyllium husk with breakfast. Bloods came back. ApoB 84. Moving." },
+      { date: "03 Apr", dow: "Fri", band: "md", sleep: 7, mood: 7, load: 6,  tags: ["calm"], note: null },
+      { date: "04 Apr", dow: "Sat", band: "hi", sleep: 8, mood: 8, load: 3,  tags: ["rested"], note: null },
+      { date: "05 Apr", dow: "Sun", band: "md", sleep: 7, mood: 7, load: 4,  tags: ["calm"], note: null },
+      { date: "06 Apr", dow: "Mon", band: "md", sleep: 7, mood: 7, load: 6,  tags: ["wired-tired"], note: null },
+      { date: "07 Apr", dow: "Tue", band: "hi", sleep: 8, mood: 8, load: 5,  tags: ["sharp", "rested"], note: "Two weeks no afternoon caffeine. Sleep is genuinely different." },
+      { date: "08 Apr", dow: "Wed", band: "hi", sleep: 8, mood: 8, load: 5,  tags: ["sharp"], note: null },
+      { date: "09 Apr", dow: "Thu", band: "md", sleep: 7, mood: 7, load: 6,  tags: ["calm"], note: null },
+      { date: "10 Apr", dow: "Fri", band: "lo", sleep: 5, mood: 5, load: 8,  tags: ["shallow-sleep", "wired-tired"], note: "Dinner ran late. Wine. Knew I'd pay for it." },
+      { date: "11 Apr", dow: "Sat", band: "md", sleep: 7, mood: 6, load: 5,  tags: ["under-recovered"], note: null },
+      { date: "12 Apr", dow: "Sun", band: "hi", sleep: 8, mood: 8, load: 3,  tags: ["rested", "calm"], note: "Easy day. Long walk with Clara, no screens until 10. Needed it." },
+      { date: "13 Apr", dow: "Mon", band: "lo", sleep: 6, mood: 5, load: 9,  tags: ["anxious", "under-recovered"], note: "Chest pressure on waking. Not pain. Noted. Did the breathing sequence Darcy sent before breakfast." },
+      { date: "14 Apr", dow: "Tue", band: "hi", sleep: 9, mood: 9, load: 4,  tags: ["rested", "sharp", "calm"], note: "Best I've felt in a fortnight. Clear head, body quiet, wife said I looked like myself again." },
+      { date: "15 Apr", dow: "Wed", band: "md", sleep: 7, mood: 6, load: 8,  tags: ["foggy", "caffeine-heavy"], note: "Afternoon slump crushed me. Caffeine after 14:00 was a mistake I could feel by midnight." },
+      { date: "16 Apr", dow: "Thu", band: "md", sleep: 5, mood: 8, load: 7,  tags: ["wired-tired", "sharp", "board-week"], note: "Surprising energy despite the short night. Ran fasted, felt strong through minute 40." },
+      { date: "17 Apr", dow: "Fri", band: "md", sleep: 6, mood: 6, load: 8,  tags: ["wired-tired", "board-week"], note: "Darcy called the hold. Zone-2 instead of lactate. Probably right." },
+      { date: "18 Apr", dow: "Sat", band: "md", sleep: 7, mood: 7, load: 5,  tags: ["wired-tired"], note: null },
+      { date: "19 Apr", dow: "Sun", band: "md", sleep: 6, mood: 6, load: 7,  tags: ["wired-tired", "board-week", "shallow-sleep"], note: "Pre-board Sunday. The familiar knot." },
+    ],
+
     history: [
       { when: "Thu 16 Apr", quote: "Surprising energy despite the short night. Ran fasted, felt strong through minute 40.", metrics: [["Sleep", 5], ["Mood", 8], ["Load", 7]] as [string, number][], tags: ["wired-tired", "sharp", "board-week"], band: "md" },
       { when: "Wed 15 Apr", quote: "Afternoon slump crushed me. Caffeine after 14:00 was a mistake I could feel by midnight.", metrics: [["Sleep", 7], ["Mood", 6], ["Load", 8]] as [string, number][], tags: ["foggy", "caffeine-heavy"], band: "md" },
@@ -322,7 +368,7 @@ export const DATA = {
       { when: "Mon 13 Apr", quote: "Chest pressure on waking. Not pain. Noted. Did the breathing sequence Darcy sent before breakfast.", metrics: [["Sleep", 6], ["Mood", 5], ["Load", 9]] as [string, number][], tags: ["anxious", "under-recovered"], band: "lo" },
       { when: "Sun 12 Apr", quote: "Easy day. Long walk with Clara, no screens until 10. Needed it.", metrics: [["Sleep", 8], ["Mood", 8], ["Load", 3]] as [string, number][], tags: ["rested", "calm"], band: "hi" },
     ],
-    qualStrip: ["md","md","hi","hi","md","lo","md","hi","hi","md","lo","lo","md","md","hi","md","md","hi","hi","md","lo","md","md","hi","md","lo","lo","md","md","md"],
+    qualStrip: ["md","md","hi","hi","md","lo","md","hi","hi","md","lo","lo","md","md","hi","md","md","hi","hi","md","lo","md","hi","lo","hi","md","md","md","md","md"],
   },
 
   team: {
