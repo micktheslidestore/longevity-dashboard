@@ -201,6 +201,39 @@ export const DATA = {
         [0.62, -0.51, -0.38, 0.34, 0.41, 1.00],
       ],
     },
+
+    // Correlation pair insights — agent-written, Darcy-reviewed
+    // Key format: "LABEL_A × LABEL_B" (alphabetical by matrix position)
+    corrInsights: {
+      "RHR × HRV": { r: -0.71, strength: "high", body: "Your strongest inverse relationship. When resting HR rises above 52 bpm for two or more consecutive nights, HRV falls below 46 ms within 24–36 hours in 80% of observed instances. The February setback is the clearest example: RHR hit 56 bpm on day 3 before HRV collapsed to 38 ms.", action: "A rising RHR is the earliest warning signal. Act on it before HRV drops — not after.", lifecycle: "signed", by: "Darcy · signed 07:14 · 17 Apr" },
+      "RHR × Stress": { r: 0.62, strength: "high", body: "Board-cycle and high-cognitive-load days account for 74% of RHR elevation events above 54 bpm. The correlation is strongest on the day before a high-stakes event — the anticipatory stress response is measurable in your wearable data 12–18 hours before the event begins.", action: "Calendar-aware protocol: on days preceding board calls or major travel, prioritise sleep onset over workout completion.", lifecycle: "signed", by: "Darcy · signed 14 Apr" },
+      "HRV × Sleep": { r: 0.58, strength: "medium", body: "Deep sleep duration is the strongest single predictor of next-morning HRV in your dataset. Nights with deep sleep above 75 min produce HRV ≥ 50 ms the following morning in 68% of cases. Deep sleep below 55 min almost never produces HRV above 46 ms.", action: "Protect deep sleep architecture: consistent bed time, sauna 90 min pre-bed, no screens after 21:30.", lifecycle: "signed", by: "Darcy · signed 05 Apr" },
+      "RHR × sTemp": { r: 0.55, strength: "medium", body: "Skin temperature elevation precedes RHR elevation by 18–24 hours on average across 14 months of data. This makes sTemp your earliest leading indicator — it rises before subjective symptoms or wearable HR changes.", action: "When sTemp deviation exceeds +0.3°C for two nights: reduce training load pre-emptively, don't wait for HRV to drop.", lifecycle: "draft", by: "Agent · awaiting Darcy" },
+      "HRV × sTemp": { r: -0.48, strength: "medium", body: "Moderate inverse relationship. sTemp rises as HRV falls, consistent with the autonomic-inflammatory link. The relationship strengthens during board cycles, suggesting stress-mediated temperature dysregulation.", action: "Monitor together. sTemp + HRV divergence is a compound flag.", lifecycle: "draft", by: "Agent · awaiting Darcy" },
+      "RHR × Sleep": { r: -0.42, strength: "low", body: "Weaker than expected. RHR elevation is driven more by stress and autonomic state than by sleep duration directly — the HRV pathway mediates the relationship.", action: "No direct action — address via stress protocol and HRV monitoring.", lifecycle: "signed", by: "Darcy · signed 05 Apr" },
+    } as Record<string, { r: number; strength: string; body: string; action: string; lifecycle: string; by: string }>,
+
+    // Pivot data — sleep hours by day-of-week × week (W-8 to W-1)
+    pivotData: {
+      metric: "Sleep h",
+      rows: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+      weeks: ["W-8", "W-7", "W-6", "W-5", "W-4", "W-3", "W-2", "W-1"],
+      values: [
+        [6.4, 7.6, 7.5, 7.5, 7.4, 7.4, 7.4, 7.3],
+        [6.6, 6.6, 6.5, 6.5, 6.4, 7.6, 7.5, 7.5],
+        [7.2, 7.1, 7.1, 7.0, 7.0, 6.9, 6.9, 6.8],
+        [6.8, 6.7, 6.7, 6.6, 6.6, 6.5, 6.5, 6.4],
+        [7.2, 7.2, 7.1, 7.1, 7.0, 7.0, 6.9, 6.9],
+        [7.5, 7.5, 7.4, 7.4, 7.4, 7.3, 7.3, 7.2],
+        [7.0, 7.0, 6.9, 6.9, 6.8, 6.8, 6.7, 6.7],
+      ],
+    },
+
+    // Pinned chart views (Darcy can save/pin combinations)
+    pinnedViews: [
+      { id: "p1", title: "HRV vs RHR · 30d", metrics: ["HRV (rMSSD)", "Resting heart rate"], pinnedBy: "Darcy · 14 Apr" },
+      { id: "p2", title: "Sleep deep + sTemp", metrics: ["Sleep · deep", "Skin temperature Δ"], pinnedBy: "Darcy · 05 Apr" },
+    ],
   },
 
   pathology: {
