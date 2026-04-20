@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { DATA } from "@/data/james"
 
 // ─── Load classification ──────────────────────────────────────────────────────
@@ -80,19 +80,134 @@ const WEEKS = [
   { id: "next",    label: "Apr 27–May 3", days: WEEK_NEXT, notes: NEXT_DAY_NOTES },
 ]
 
+// ─── Toast ────────────────────────────────────────────────────────────────────
+
+function Toast({ message, onDone }: { message: string; onDone: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onDone, 3200)
+    return () => clearTimeout(t)
+  }, [onDone])
+
+  return (
+    <div style={{
+      position: "fixed",
+      bottom: 32,
+      left: "50%",
+      transform: "translateX(-50%)",
+      zIndex: 9999,
+      background: "var(--ink)",
+      color: "var(--bg)",
+      fontFamily: "var(--mono)",
+      fontSize: 11,
+      padding: "12px 24px",
+      letterSpacing: "0.04em",
+      pointerEvents: "none",
+      boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
+    }}>
+      {message}
+    </div>
+  )
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function CoachCalendarPage() {
   const [weekId, setWeekId] = useState("current")
   const [selectedDay, setSelectedDay] = useState<string | null>("2026-04-20")
-  const [showDragHint, setShowDragHint] = useState(true)
+
+  // ── Per-week drag state ──
+  const [weekDays, setWeekDays] = useState<WeekPlanDay[]>(() =>
+    WEEKS[0].days.map(d => ({ ...d }))
+  )
+  const [originalDays] = useState<WeekPlanDay[]>(() =>
+    WEEKS[0].days.map(d => ({ ...d }))
+  )
+  const [nextWeekDays, setNextWeekDays] = useState<WeekPlanDay[]>(() =>
+    WEEK_NEXT.map(d => ({ ...d }))
+  )
+  const [nextOriginalDays] = useState<WeekPlanDay[]>(() =>
+    WEEK_NEXT.map(d => ({ ...d }))
+  )
+
+  const [isPending, setIsPending] = useState(false)
+  const [isNextPending, setIsNextPending] = useState(false)
+
+  const [dragOver, setDragOver] = useState<string | null>(null)
+  const dragRef = useRef<string | null>(null)
+
+  const [toast, setToast] = useState<string | null>(null)
 
   const week = WEEKS.find(w => w.id === weekId)!
-  const selected = week.days.find(d => d.date === selectedDay) ?? null
+
+  // Which days array is active for this week tab
+  const activeDays     = weekId === "current" ? weekDays     : nextWeekDays
+  const setActiveDays  = weekId === "current" ? setWeekDays  : setNextWeekDays
+  const activePending  = weekId === "current" ? isPending    : isNextPending
+  const setActivePending = weekId === "current" ? setIsPending : setIsNextPending
+  const activeOriginal = weekId === "current" ? originalDays : nextOriginalDays
+
+  const selected      = activeDays.find(d => d.date === selectedDay) ?? null
   const selectedNotes = selectedDay ? (week.notes[selectedDay] ?? []) : []
+
+  // ── Drag handlers ──
+
+  function handleDragStart(date: string) {
+    dragRef.current = date
+  }
+
+  function handleDragOver(e: React.DragEvent, date: string) {
+    e.preventDefault()
+    setDragOver(date)
+  }
+
+  function handleDragLeave() {
+    setDragOver(null)
+  }
+
+  function handleDrop(targetDate: string) {
+    const src = dragRef.current
+    if (!src || src === targetDate) {
+      setDragOver(null)
+      return
+    }
+    setActiveDays(days => {
+      const next = days.map(d => ({ ...d }))
+      const si = next.findIndex(d => d.date === src)
+      const ti = next.findIndex(d => d.date === targetDate)
+      if (si === -1 || ti === -1) return days
+      const tmp = next[si].workout
+      next[si] = { ...next[si], workout: next[ti].workout }
+      next[ti] = { ...next[ti], workout: tmp }
+      return next
+    })
+    setActivePending(true)
+    dragRef.current = null
+    setDragOver(null)
+  }
+
+  function handleDragEnd() {
+    dragRef.current = null
+    setDragOver(null)
+  }
+
+  function handleReset() {
+    setActiveDays(activeOriginal.map(d => ({ ...d })))
+    setActivePending(false)
+  }
+
+  function handleCommit() {
+    setActivePending(false)
+    setToast("Schedule updated · syncing with Jamie's calendar")
+  }
+
+  // Load bar uses activeDays so it reflects current drag state
+  const loadBarDays = activeDays
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: "24px 32px", maxWidth: 1300 }}>
+
+      {/* Toast */}
+      {toast && <Toast message={toast} onDone={() => setToast(null)} />}
 
       {/* Header */}
       <div style={{ borderBottom: "1px solid var(--hair)", paddingBottom: 16 }}>
@@ -117,24 +232,16 @@ export default function CoachCalendarPage() {
         </div>
       </div>
 
-      {/* Drag hint */}
-      {showDragHint && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", border: "1px solid var(--hair)", background: "var(--panel-2)", fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-3)" }}>
-          <span>Drag-and-drop rescheduling is coming — this view shows the current committed plan synced with Jamie&apos;s calendar.</span>
-          <button onClick={() => setShowDragHint(false)} style={{ color: "var(--ink-4)", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--mono)", fontSize: 9 }}>Dismiss</button>
-        </div>
-      )}
-
       {/* Load bar summary */}
       <div className="panel">
         <div className="panel-head">
           <span>Weekly load · {week.label}</span>
           <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-            {week.days.reduce((sum, d) => sum + loadScore(d.workout?.type, d.workout?.duration), 0)} load units · target ≤380
+            {loadBarDays.reduce((sum, d) => sum + loadScore(d.workout?.type, d.workout?.duration), 0)} load units · target ≤380
           </span>
         </div>
         <div style={{ padding: "12px 24px 16px", display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8 }}>
-          {week.days.map(day => {
+          {loadBarDays.map(day => {
             const score = loadScore(day.workout?.type, day.workout?.duration)
             const pct = Math.min(100, (score / 100) * 100)
             const color = LOAD_COLOR(score)
@@ -157,29 +264,77 @@ export default function CoachCalendarPage() {
       <div className="panel">
         <div className="panel-head">
           <span>Day-by-day · {week.label}</span>
-          <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Click a day to see detail</span>
+          <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Drag workouts to reschedule · click a day to see detail</span>
         </div>
+
+        {/* Changes pending notice */}
+        {activePending && (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "10px 20px",
+            borderBottom: "1px solid var(--hair)",
+            background: "color-mix(in srgb, var(--warn) 7%, transparent)",
+          }}>
+            <span style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--warn)", letterSpacing: "0.04em" }}>
+              Changes pending — schedule has been rearranged
+            </span>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={handleReset}
+                style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", border: "1px solid var(--hair-strong)", padding: "5px 14px", color: "var(--ink-3)", background: "transparent", cursor: "pointer" }}
+              >
+                Reset
+              </button>
+              <button
+                onClick={handleCommit}
+                style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", border: "1px solid var(--ok)", padding: "5px 14px", color: "var(--ok)", background: "color-mix(in srgb, var(--ok) 10%, transparent)", cursor: "pointer" }}
+              >
+                Commit changes
+              </button>
+            </div>
+          </div>
+        )}
+
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}>
-          {week.days.map((day, i) => {
-            const isSelected = selectedDay === day.date
-            const wColor = day.workout ? WORKOUT_COLORS[day.workout.type] : "var(--ink-4)"
-            const notes = week.notes[day.date] ?? []
+          {activeDays.map((day, i) => {
+            const isSelected  = selectedDay === day.date
+            const isDragOver  = dragOver === day.date
+            const wColor      = day.workout ? WORKOUT_COLORS[day.workout.type] ?? "var(--ink-4)" : "var(--ink-4)"
+            const notes       = week.notes[day.date] ?? []
             const hasConflict = notes.some(n => n.type === "medical") && day.workout?.type === "test"
 
             return (
               <div
                 key={day.date}
+                // click to select
                 onClick={() => setSelectedDay(isSelected ? null : day.date)}
+                // drop target
+                onDragOver={e => handleDragOver(e, day.date)}
+                onDragLeave={handleDragLeave}
+                onDrop={() => handleDrop(day.date)}
                 style={{
-                  padding: "12px 10px",
+                  padding: "14px 12px",
                   borderRight: i < 6 ? "1px solid var(--hair)" : undefined,
-                  borderLeft: day.isToday ? "2px solid var(--accent)" : isSelected ? "2px solid var(--ok)" : undefined,
-                  background: isSelected ? "var(--panel-2)" : "transparent",
+                  borderLeft: day.isToday
+                    ? "2px solid var(--accent)"
+                    : isSelected
+                    ? "2px solid var(--ok)"
+                    : undefined,
+                  background: isDragOver
+                    ? "color-mix(in srgb, var(--ok) 8%, transparent)"
+                    : isSelected
+                    ? "var(--panel-2)"
+                    : "transparent",
+                  outline: isDragOver ? "1.5px dashed var(--ok)" : undefined,
+                  outlineOffset: isDragOver ? "-2px" : undefined,
                   cursor: "pointer",
-                  minHeight: 160,
+                  minHeight: 220,
                   display: "flex",
                   flexDirection: "column",
-                  gap: 6,
+                  gap: 8,
+                  transition: "background 0.12s, outline 0.12s",
                 }}
               >
                 {/* Day header */}
@@ -190,23 +345,44 @@ export default function CoachCalendarPage() {
                   </div>
                 </div>
 
-                {/* Workout card */}
+                {/* Workout card — draggable */}
                 {day.workout ? (
-                  <div style={{ padding: "4px 6px", borderLeft: `2px solid ${wColor}`, background: `color-mix(in srgb, ${wColor} 8%, transparent)` }}>
-                    <div style={{ fontFamily: "var(--mono)", fontSize: 8, color: wColor, textTransform: "uppercase", letterSpacing: "0.05em", lineHeight: 1.3 }}>{day.workout.label}</div>
-                    {day.workout.duration && <div style={{ fontFamily: "var(--mono)", fontSize: 7, color: "var(--ink-4)", marginTop: 1 }}>{day.workout.duration} min</div>}
+                  <div
+                    draggable
+                    onDragStart={() => handleDragStart(day.date)}
+                    onDragEnd={handleDragEnd}
+                    onClick={e => e.stopPropagation()}
+                    style={{
+                      padding: "10px 10px",
+                      borderLeft: `3px solid ${wColor}`,
+                      background: `color-mix(in srgb, ${wColor} 10%, transparent)`,
+                      cursor: "grab",
+                      opacity: dragRef.current === day.date ? 0.4 : 1,
+                      userSelect: "none",
+                    }}
+                  >
+                    <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: wColor, textTransform: "uppercase", letterSpacing: "0.05em", lineHeight: 1.4 }}>{day.workout.label}</div>
+                    {day.workout.duration != null && (
+                      <div style={{ fontFamily: "var(--mono)", fontSize: 8, color: "var(--ink-3)", marginTop: 3 }}>{day.workout.duration} min</div>
+                    )}
+                    {day.workout.note && (
+                      <div style={{ fontSize: 10.5, color: "var(--ink-3)", lineHeight: 1.5, marginTop: 5 }}>{day.workout.note}</div>
+                    )}
                   </div>
                 ) : (
-                  <div style={{ padding: "4px 6px", borderLeft: "2px solid var(--hair-strong)" }}>
+                  <div
+                    draggable={false}
+                    style={{ padding: "10px 10px", borderLeft: "2px dashed var(--hair-strong)", minHeight: 52, display: "flex", alignItems: "center" }}
+                  >
                     <div style={{ fontFamily: "var(--mono)", fontSize: 8, color: "var(--ink-4)", textTransform: "uppercase" }}>Rest</div>
                   </div>
                 )}
 
                 {/* Calendar notes */}
                 {notes.map((note, ni) => (
-                  <div key={ni} style={{ padding: "3px 6px", borderLeft: `2px solid ${NOTE_COLORS[note.type]}`, background: `color-mix(in srgb, ${NOTE_COLORS[note.type]} 6%, transparent)` }}>
-                    <div style={{ fontFamily: "var(--mono)", fontSize: 7, color: "var(--ink-4)"  }}>{note.time}</div>
-                    <div style={{ fontFamily: "var(--mono)", fontSize: 8, color: NOTE_COLORS[note.type], lineHeight: 1.3 }}>{note.text}</div>
+                  <div key={ni} style={{ padding: "5px 8px", borderLeft: `2px solid ${NOTE_COLORS[note.type]}`, background: `color-mix(in srgb, ${NOTE_COLORS[note.type]} 6%, transparent)` }}>
+                    <div style={{ fontFamily: "var(--mono)", fontSize: 7.5, color: "var(--ink-4)" }}>{note.time}</div>
+                    <div style={{ fontFamily: "var(--mono)", fontSize: 8.5, color: NOTE_COLORS[note.type], lineHeight: 1.35 }}>{note.text}</div>
                   </div>
                 ))}
 
@@ -231,7 +407,7 @@ export default function CoachCalendarPage() {
                 <>
                   <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
                     <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: WORKOUT_COLORS[selected.workout.type], border: `1px solid ${WORKOUT_COLORS[selected.workout.type]}`, padding: "2px 7px", textTransform: "uppercase" }}>{selected.workout.type}</span>
-                    {selected.workout.duration && <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)" }}>{selected.workout.duration} min</span>}
+                    {selected.workout.duration != null && <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)" }}>{selected.workout.duration} min</span>}
                     <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: LOAD_COLOR(loadScore(selected.workout.type, selected.workout.duration)) }}>
                       Load: {loadScore(selected.workout.type, selected.workout.duration)}
                     </span>

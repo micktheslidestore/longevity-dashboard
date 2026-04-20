@@ -1,4 +1,5 @@
 import CoachSidebar from "@/components/CoachSidebar"
+import { ChatWidget } from "@/components/ChatWidget"
 
 export default function CoachLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -7,6 +8,7 @@ export default function CoachLayout({ children }: { children: React.ReactNode })
       <div style={{ flex: 1, overflow: "auto" }}>
         {children}
       </div>
+      <ChatWidget />
     </div>
   )
 }
