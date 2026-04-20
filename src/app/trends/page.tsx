@@ -177,6 +177,55 @@ export default function TrendsPage() {
         </div>
       </div>
 
+      {/* ── Z-score scorecard ───────────────────────────────────────────── */}
+      <div className="panel">
+        <div className="panel-head">
+          <span>Biomarker Z-scores · today vs 21-day baseline</span>
+          <button
+            title="Z-score measures how far today's reading is from your personal 21-day rolling mean, in standard deviations. Positive = elevated burden. Calculated using IRT discrimination weights — each biomarker is weighted by its clinical evidence for loading onto the Allostatic Load factor."
+            style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", background: "transparent", border: "1px solid var(--hair-strong)", padding: "2px 8px", cursor: "pointer", letterSpacing: "0.06em" }}
+          >
+            (i) What is a Z-score?
+          </button>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 0 }}>
+          {(Object.keys(WEIGHTS) as MetricKey[]).map((k, idx) => {
+            const z = lastDay.z[k]
+            const raw = lastDay.raw[k as keyof typeof lastDay.raw] as number
+            const color = z > 1.2 ? "var(--alert)" : z > 0.5 ? "var(--warn)" : z < -0.5 ? "var(--ok)" : "var(--ink-2)"
+            const barW = Math.abs(z) / 3 * 100
+            const isPositive = z >= 0
+            return (
+              <div key={k} style={{
+                padding: "14px 16px",
+                borderRight: idx % 6 !== 5 ? "1px solid var(--hair)" : undefined,
+                borderTop: idx >= 6 ? "1px solid var(--hair)" : undefined,
+              }}>
+                <div style={{ fontFamily: "var(--mono)", fontSize: 8, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
+                  {WEIGHTS[k].label}
+                </div>
+                <div style={{ fontFamily: "var(--mono)", fontSize: 20, letterSpacing: "-0.03em", color, lineHeight: 1, marginBottom: 2 }}>
+                  {z > 0 ? "+" : ""}{z.toFixed(2)}σ
+                </div>
+                <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-4)", marginBottom: 8 }}>
+                  {raw.toFixed(1)} {WEIGHTS[k].unit}
+                </div>
+                <div style={{ height: 3, background: "var(--hair-strong)", position: "relative" }}>
+                  <div style={{
+                    position: "absolute",
+                    height: "100%",
+                    width: `${barW}%`,
+                    background: color,
+                    left: isPositive ? "50%" : `${50 - barW}%`,
+                  }} />
+                  <div style={{ position: "absolute", left: "50%", top: -2, width: 1, height: 7, background: "var(--ink-3)" }} />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
       {/* ── Hero chart (IRT AL score + biomarker overlays) ──────────────── */}
       <HeroChart computed={computed} eventMarkers={DATA.checkin.regimeChanges.map(rc => ({ dayIndex: rc.dayIndex, label: rc.label, color: rc.color }))} />
 
@@ -231,114 +280,6 @@ export default function TrendsPage() {
         </div>
       </div>
 
-      {/* ── Correlation matrix ───────────────────────────────────────────── */}
-      <div className="panel">
-        <div className="panel-head">
-          <span>Cross-signal correlation engine</span>
-          <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-            Click any cell · {period} · warm = co-elevation · cool = inverse
-          </span>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 0 }}>
-
-          {/* Matrix */}
-          <div style={{ padding: "16px 20px", overflowX: "auto", borderRight: "1px solid var(--hair)" }}>
-            <table style={{ borderCollapse: "collapse", fontFamily: "var(--mono)", fontSize: 11 }}>
-              <thead>
-                <tr>
-                  <th style={{ padding: "6px 10px", color: "var(--ink-3)", fontWeight: 400, textAlign: "left", borderBottom: "1px solid var(--hair-strong)", fontSize: 9 }} />
-                  {corr.labels.map(l => (
-                    <th key={l} style={{ padding: "6px 10px", color: "var(--ink-3)", fontWeight: 400, textAlign: "center", letterSpacing: "0.1em", textTransform: "uppercase", fontSize: 9, borderBottom: "1px solid var(--hair-strong)" }}>{l}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {corr.labels.map((row, i) => (
-                  <tr key={row}>
-                    <td style={{ padding: "4px 10px", color: "var(--ink-2)", textTransform: "uppercase", letterSpacing: "0.1em", fontSize: 9, borderBottom: "1px solid var(--hair)", whiteSpace: "nowrap" }}>{row}</td>
-                    {corr.labels.map((_, j) => {
-                      const r = corr.matrix[i][j]
-                      const abs = Math.abs(r)
-                      const isSelected = selectedPair && ((selectedPair.i === i && selectedPair.j === j) || (selectedPair.i === j && selectedPair.j === i))
-                      const rank = top3.findIndex(p => (p.i === i && p.j === j) || (p.i === j && p.j === i))
-                      return (
-                        <td
-                          key={j}
-                          onClick={() => i !== j ? setSelectedPair({ i: Math.min(i, j), j: Math.max(i, j) }) : null}
-                          style={{
-                            padding: "10px 10px",
-                            textAlign: "center",
-                            background: i === j ? "var(--panel-2)" : corrColor(r),
-                            borderBottom: "1px solid var(--hair)",
-                            position: "relative",
-                            color: i === j ? "var(--ink-3)" : corrTextColor(r, abs),
-                            fontWeight: rank >= 0 && i !== j ? 500 : 400,
-                            cursor: i !== j ? "pointer" : "default",
-                            outline: isSelected ? "2px solid var(--ink)" : undefined,
-                            outlineOffset: -2,
-                            transition: "opacity 0.1s",
-                            minWidth: 52,
-                          }}
-                        >
-                          {i === j ? "—" : (r >= 0 ? "+" : "") + r.toFixed(2)}
-                          {rank >= 0 && i !== j && (
-                            <span style={{
-                              position: "absolute", top: 2, right: 2,
-                              fontFamily: "var(--mono)", fontSize: 8,
-                              background: "var(--ink)", color: "var(--bg)",
-                              width: 13, height: 13,
-                              display: "flex", alignItems: "center", justifyContent: "center",
-                            }}>
-                              {rank + 1}
-                            </span>
-                          )}
-                        </td>
-                      )
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pair detail panel */}
-          <div style={{ padding: "20px 24px", minWidth: 280 }}>
-            {selectedPair && selectedR !== null ? (
-              <>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-3)", marginBottom: 8 }}>Selected pair</div>
-                <div style={{ fontFamily: "var(--serif)", fontSize: 24, fontWeight: 300, letterSpacing: "-0.02em", color: "var(--ink)", marginBottom: 6 }}>
-                  {corr.labels[selectedPair.i]} × {corr.labels[selectedPair.j]}
-                </div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 22, letterSpacing: "-0.03em", marginBottom: 16, color: Math.abs(selectedR) >= 0.6 ? (selectedR > 0 ? "var(--warn)" : "var(--ok)") : "var(--ink-2)" }}>
-                  r = {selectedR >= 0 ? "+" : ""}{selectedR.toFixed(2)}
-                </div>
-                {selectedInsight ? (
-                  <>
-                    <p style={{ fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.6, marginBottom: 12 }}>
-                      {selectedInsight.body}
-                    </p>
-                    <div style={{ borderLeft: "2px solid var(--accent)", paddingLeft: 10, marginBottom: 12 }}>
-                      <div style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-3)", marginBottom: 4 }}>Action</div>
-                      <div style={{ fontSize: 12, color: "var(--ink)", lineHeight: 1.5 }}>{selectedInsight.action}</div>
-                    </div>
-                    <LifecycleChip lc={selectedInsight.lifecycle} />
-                    <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.06em", marginLeft: 8 }}>{selectedInsight.by}</span>
-                  </>
-                ) : (
-                  <p style={{ fontSize: 12.5, color: "var(--ink-3)", lineHeight: 1.6, fontStyle: "italic", fontFamily: "var(--serif)" }}>
-                    {corr.labels[selectedPair.i]} × {corr.labels[selectedPair.j]}: r = {selectedR.toFixed(2)}. Click another cell to explore a different pair. Insights are written by the agent and countersigned by Darcy when clinically meaningful.
-                  </p>
-                )}
-              </>
-            ) : (
-              <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                Click any cell to explore a pair
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* ── Pivot chart with overlay ─────────────────────────────────────── */}
       <div className="panel">
         <div className="pivot-head">
@@ -367,15 +308,13 @@ export default function TrendsPage() {
                 ))}
               </div>
             </label>
-            {role === "darcy" && (
-              <button
-                onClick={pinCurrentView}
-                disabled={pinned.length >= 3}
-                style={{ fontFamily: "var(--mono)", fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", border: "1px solid var(--hair-strong)", padding: "5px 10px", color: pinned.length >= 3 ? "var(--ink-3)" : "var(--ink-2)", background: "transparent", cursor: pinned.length >= 3 ? "not-allowed" : "pointer" }}
-              >
-                {pinned.length >= 3 ? "3 pinned (max)" : "Pin view"}
-              </button>
-            )}
+            <button
+              onClick={pinCurrentView}
+              disabled={pinned.length >= 3}
+              style={{ fontFamily: "var(--mono)", fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", border: "1px solid var(--hair-strong)", padding: "5px 10px", color: pinned.length >= 3 ? "var(--ink-3)" : "var(--ink-2)", background: "transparent", cursor: pinned.length >= 3 ? "not-allowed" : "pointer" }}
+            >
+              {pinned.length >= 3 ? "3 pinned (max)" : "Pin view"}
+            </button>
           </div>
         </div>
 
@@ -522,6 +461,100 @@ export default function TrendsPage() {
             )}
           </div>
         ))}
+      </div>
+
+      {/* ── Correlation matrix (deep dive — bottom of page) ──────────────── */}
+      <div className="panel">
+        <div className="panel-head">
+          <span>Cross-signal correlation engine</span>
+          <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            Click any cell · {period} · warm = co-elevation · cool = inverse
+          </span>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 0 }}>
+          {/* Matrix */}
+          <div style={{ padding: "16px 20px", overflowX: "auto", borderRight: "1px solid var(--hair)" }}>
+            <table style={{ borderCollapse: "collapse", fontFamily: "var(--mono)", fontSize: 11 }}>
+              <thead>
+                <tr>
+                  <th style={{ padding: "6px 10px", color: "var(--ink-3)", fontWeight: 400, textAlign: "left", borderBottom: "1px solid var(--hair-strong)", fontSize: 9 }} />
+                  {corr.labels.map(l => (
+                    <th key={l} style={{ padding: "6px 10px", color: "var(--ink-3)", fontWeight: 400, textAlign: "center", letterSpacing: "0.1em", textTransform: "uppercase", fontSize: 9, borderBottom: "1px solid var(--hair-strong)" }}>{l}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {corr.labels.map((row, i) => (
+                  <tr key={row}>
+                    <td style={{ padding: "4px 10px", color: "var(--ink-2)", textTransform: "uppercase", letterSpacing: "0.1em", fontSize: 9, borderBottom: "1px solid var(--hair)", whiteSpace: "nowrap" }}>{row}</td>
+                    {corr.labels.map((_, j) => {
+                      const r = corr.matrix[i][j]
+                      const abs = Math.abs(r)
+                      const isSelected = selectedPair && ((selectedPair.i === i && selectedPair.j === j) || (selectedPair.i === j && selectedPair.j === i))
+                      const rank = top3.findIndex(p => (p.i === i && p.j === j) || (p.i === j && p.j === i))
+                      return (
+                        <td
+                          key={j}
+                          onClick={() => i !== j ? setSelectedPair({ i: Math.min(i, j), j: Math.max(i, j) }) : null}
+                          style={{
+                            padding: "10px 10px", textAlign: "center",
+                            background: i === j ? "var(--panel-2)" : corrColor(r),
+                            borderBottom: "1px solid var(--hair)", position: "relative",
+                            color: i === j ? "var(--ink-3)" : corrTextColor(r, abs),
+                            fontWeight: rank >= 0 && i !== j ? 500 : 400,
+                            cursor: i !== j ? "pointer" : "default",
+                            outline: isSelected ? "2px solid var(--ink)" : undefined,
+                            outlineOffset: -2, minWidth: 52,
+                          }}
+                        >
+                          {i === j ? "—" : (r >= 0 ? "+" : "") + r.toFixed(2)}
+                          {rank >= 0 && i !== j && (
+                            <span style={{ position: "absolute", top: 2, right: 2, fontFamily: "var(--mono)", fontSize: 8, background: "var(--ink)", color: "var(--bg)", width: 13, height: 13, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                              {rank + 1}
+                            </span>
+                          )}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {/* Pair detail */}
+          <div style={{ padding: "20px 24px", minWidth: 280 }}>
+            {selectedPair && selectedR !== null ? (
+              <>
+                <div style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-3)", marginBottom: 8 }}>Selected pair</div>
+                <div style={{ fontFamily: "var(--serif)", fontSize: 24, fontWeight: 300, letterSpacing: "-0.02em", color: "var(--ink)", marginBottom: 6 }}>
+                  {corr.labels[selectedPair.i]} × {corr.labels[selectedPair.j]}
+                </div>
+                <div style={{ fontFamily: "var(--mono)", fontSize: 22, letterSpacing: "-0.03em", marginBottom: 16, color: Math.abs(selectedR) >= 0.6 ? (selectedR > 0 ? "var(--warn)" : "var(--ok)") : "var(--ink-2)" }}>
+                  r = {selectedR >= 0 ? "+" : ""}{selectedR.toFixed(2)}
+                </div>
+                {selectedInsight ? (
+                  <>
+                    <p style={{ fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.6, marginBottom: 12 }}>{selectedInsight.body}</p>
+                    <div style={{ borderLeft: "2px solid var(--accent)", paddingLeft: 10, marginBottom: 12 }}>
+                      <div style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-3)", marginBottom: 4 }}>Action</div>
+                      <div style={{ fontSize: 12, color: "var(--ink)", lineHeight: 1.5 }}>{selectedInsight.action}</div>
+                    </div>
+                    <LifecycleChip lc={selectedInsight.lifecycle} />
+                    <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.06em", marginLeft: 8 }}>{selectedInsight.by}</span>
+                  </>
+                ) : (
+                  <p style={{ fontSize: 12.5, color: "var(--ink-3)", lineHeight: 1.6, fontStyle: "italic", fontFamily: "var(--serif)" }}>
+                    {corr.labels[selectedPair.i]} × {corr.labels[selectedPair.j]}: r = {selectedR.toFixed(2)}. Click another cell to explore a different pair.
+                  </p>
+                )}
+              </>
+            ) : (
+              <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                Click any cell to explore a pair
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
     </div>

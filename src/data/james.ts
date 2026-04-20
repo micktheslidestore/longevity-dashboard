@@ -460,6 +460,31 @@ export const DATA = {
     { id: "a13", when: "02 Apr",         type: "goal",         actor: "darcy",   visibility: "both",  title: "North-star confirmed for Q3",        body: "ApoB ≤ 70 mg/dL while HRV > 48 ms. 68 days to next bloods. Sub-goals active." },
   ],
 
+  // Week plan — current week Mon 20 Apr → Sun 26 Apr
+  weekPlan: [
+    { date: "2026-04-20", dow: "Mon", isToday: true,
+      workout: { label: "Rest day", type: "rest", duration: null, note: "Active recovery only. No intensity." },
+      diet: { label: "Anti-inflammatory", note: "Omega-3 focus. 40g fibre target. No alcohol. Early dinner finish by 19:30." } },
+    { date: "2026-04-21", dow: "Tue", isToday: false,
+      workout: { label: "Zone-2 run", type: "zone2", duration: 45, note: "HR 120–135 bpm. Richmond Park." },
+      diet: { label: "Training day fuel", note: "Pre-run: banana + almond butter. Post: 35g protein within 30 min. 2.5L water." } },
+    { date: "2026-04-22", dow: "Wed", isToday: false,
+      workout: { label: "DEXA + VO₂max", type: "test", duration: 90, note: "Fasted from 20:30 Tue. West Clinic 08:30." },
+      diet: { label: "Fasted to 08:30", note: "Water only pre-test. Post-test: protein + complex carbs. No caffeine before." } },
+    { date: "2026-04-23", dow: "Thu", isToday: false,
+      workout: { label: "Mobility + breath", type: "mobility", duration: 20, note: "Pre-offsite. 4-7-8 protocol." },
+      diet: { label: "Travel protocol", note: "Pack: nuts, protein bar. Avoid buffet carbs. 1 drink max — before 19:00." } },
+    { date: "2026-04-24", dow: "Fri", isToday: false,
+      workout: null,
+      diet: { label: "Offsite — hold protocol", note: "Protect sleep onset. No alcohol post 20:00. Protein at every meal." } },
+    { date: "2026-04-25", dow: "Sat", isToday: false,
+      workout: { label: "Mobility + sauna", type: "recovery", duration: 60, note: "Sauna 15 min. Cold finish. Light stretching." },
+      diet: { label: "Recovery day", note: "40g fibre. Anti-inflammatory dinner. Omega-3. Early meal finish by 19:00." } },
+    { date: "2026-04-26", dow: "Sun", isToday: false,
+      workout: { label: "Zone-2 run", type: "zone2", duration: 45, note: "HR 120–135 bpm. Easy effort. Note HRV on waking first." },
+      diet: { label: "Pre-week prep", note: "Light carbs pre-run. Recovery shake post. Early sleep onset — board week ahead." } },
+  ],
+
   // 30-day IRT input series: index 0 = Mar 21 2026, index 29 = Apr 19 2026
   rawTimeSeries: genTimeSeries(),
 

@@ -3,12 +3,20 @@
 import { usePathname, useRouter } from "next/navigation"
 import { useApp } from "./RoleContext"
 
-const SCREENS = [
-  { key: "checkin", num: "01", label: "Check-in", href: "/checkin" },
-  { key: "today", num: "02", label: "Today", href: "/" },
-  { key: "trends", num: "03", label: "Trends", href: "/trends" },
-  { key: "medical", num: "04", label: "Medical", href: "/medical" },
-  { key: "team", num: "05", label: "Team", href: "/team" },
+const JAMIE_SCREENS = [
+  { key: "checkin",   num: "01", label: "Check-in",  href: "/checkin" },
+  { key: "dashboard", num: "02", label: "Dashboard",  href: "/" },
+  { key: "trends",    num: "03", label: "Trends",     href: "/trends" },
+  { key: "medical",   num: "04", label: "Medical",    href: "/medical" },
+  { key: "team",      num: "05", label: "Team",       href: "/team" },
+]
+
+const DARCY_SCREENS = [
+  { key: "checkin",   num: "01", label: "Compliance", href: "/checkin" },
+  { key: "dashboard", num: "02", label: "Dashboard",  href: "/" },
+  { key: "trends",    num: "03", label: "Trends",     href: "/trends" },
+  { key: "medical",   num: "04", label: "Medical",    href: "/medical" },
+  { key: "team",      num: "05", label: "Team",       href: "/team" },
 ]
 
 export default function Sidebar() {
@@ -27,7 +35,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="nav">
-        {SCREENS.map((s) => {
+        {(role === "darcy" ? DARCY_SCREENS : JAMIE_SCREENS).map((s) => {
           const active = pathname === s.href || (s.href !== "/" && pathname.startsWith(s.href))
           return (
             <button
