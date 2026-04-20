@@ -6,17 +6,19 @@ import { useApp } from "./RoleContext"
 const JAMIE_SCREENS = [
   { key: "checkin",   num: "01", label: "Check-in",  href: "/checkin" },
   { key: "dashboard", num: "02", label: "Dashboard",  href: "/" },
-  { key: "trends",    num: "03", label: "Trends",     href: "/trends" },
-  { key: "medical",   num: "04", label: "Medical",    href: "/medical" },
-  { key: "team",      num: "05", label: "Team",       href: "/team" },
+  { key: "command",   num: "03", label: "Command",    href: "/command" },
+  { key: "trends",    num: "04", label: "Trends",     href: "/trends" },
+  { key: "medical",   num: "05", label: "Medical",    href: "/medical" },
+  { key: "team",      num: "06", label: "Team",       href: "/team" },
 ]
 
 const DARCY_SCREENS = [
   { key: "checkin",   num: "01", label: "Compliance", href: "/checkin" },
   { key: "dashboard", num: "02", label: "Dashboard",  href: "/" },
-  { key: "trends",    num: "03", label: "Trends",     href: "/trends" },
-  { key: "medical",   num: "04", label: "Medical",    href: "/medical" },
-  { key: "team",      num: "05", label: "Team",       href: "/team" },
+  { key: "command",   num: "03", label: "Command",    href: "/command" },
+  { key: "trends",    num: "04", label: "Trends",     href: "/trends" },
+  { key: "medical",   num: "05", label: "Medical",    href: "/medical" },
+  { key: "team",      num: "06", label: "Team",       href: "/team" },
 ]
 
 export default function Sidebar() {

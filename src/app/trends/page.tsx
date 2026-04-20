@@ -48,22 +48,26 @@ type ChartType = typeof CHART_TYPES[number]
 
 // ─── sub-components ──────────────────────────────────────────────────────────
 
+const OVERLAY_COLORS = ["var(--ok)", "#C8A56A", "#9B8FA9"] as const
+
 function ChartPanel({
   card,
   events,
+  regimeChanges,
   type,
-  overlay,
-  overlayCard,
+  overlayCards,
 }: {
   card: typeof DATA.trends.cards[number]
   events: typeof DATA.trends.events
+  regimeChanges?: typeof DATA.checkin.regimeChanges
   type: ChartType
-  overlay: boolean
-  overlayCard?: typeof DATA.trends.cards[number]
+  overlayCards?: typeof DATA.trends.cards[number][]
 }) {
+  const hasOverlays = !!overlayCards && overlayCards.length > 0
+
   const data = card.data.map((v, i) => {
     const d: Record<string, number> = { day: i + 1, primary: parseFloat(v.toFixed(2)) }
-    if (overlayCard) d.overlay = parseFloat(overlayCard.data[i].toFixed(2))
+    overlayCards?.forEach((oc, idx) => { d[`ov${idx}`] = parseFloat(oc.data[i].toFixed(2)) })
     return d
   })
 
@@ -81,21 +85,30 @@ function ChartPanel({
             <CartesianGrid stroke="var(--hair)" vertical={false} />
             <XAxis dataKey="day" tick={{ fontFamily: "var(--mono)", fontSize: 9, fill: "var(--ink-3)" }} tickLine={false} axisLine={false} />
             <YAxis yAxisId="left" tick={{ fontFamily: "var(--mono)", fontSize: 9, fill: "var(--ink-3)" }} tickLine={false} axisLine={false} domain={["auto", "auto"]} />
-            {overlay && overlayCard && <YAxis yAxisId="right" orientation="right" tick={{ fontFamily: "var(--mono)", fontSize: 9, fill: "var(--ink-3)" }} tickLine={false} axisLine={false} domain={["auto", "auto"]} />}
+            {hasOverlays && <YAxis yAxisId="right" orientation="right" tick={{ fontFamily: "var(--mono)", fontSize: 9, fill: "var(--ink-3)" }} tickLine={false} axisLine={false} domain={["auto", "auto"]} />}
             <Tooltip {...tooltipStyle} />
+            {/* Life events */}
             {events.map(ev => (
-              <ReferenceLine key={ev.day} x={ev.day} yAxisId="left" stroke="var(--warn)" strokeDasharray="2 3" strokeWidth={1}
-                label={{ value: ev.lbl, position: "top", fontSize: 8, fill: "var(--warn)", fontFamily: "var(--mono)" }} />
+              <ReferenceLine key={`ev-${ev.day}`} x={ev.day} yAxisId="left" stroke="var(--ink-3)" strokeDasharray="2 4" strokeWidth={1}
+                label={{ value: ev.lbl, position: "insideTopLeft", fontSize: 7, fill: "var(--ink-3)", fontFamily: "var(--mono)" }} />
+            ))}
+            {/* Protocol regime change annotations */}
+            {regimeChanges?.map(rc => (
+              <ReferenceLine key={`rc-${rc.dayIndex}`} x={rc.dayIndex + 1} yAxisId="left"
+                stroke={rc.color} strokeDasharray="1 2" strokeWidth={2}
+                label={{ value: `▲ ${rc.label}`, position: "insideTopRight", fontSize: 7, fill: rc.color, fontFamily: "var(--mono)" }} />
             ))}
             {card.band && <>
               <ReferenceLine y={card.band[0]} yAxisId="left" stroke="var(--hair-strong)" strokeDasharray="3 3" />
               <ReferenceLine y={card.band[1]} yAxisId="left" stroke="var(--hair-strong)" strokeDasharray="3 3" />
             </>}
             <Line yAxisId="left" type="monotone" dataKey="primary" stroke="var(--accent)" strokeWidth={1.5} dot={false} name={card.name} />
-            {overlay && overlayCard && (
-              <Line yAxisId="right" type="monotone" dataKey="overlay" stroke="var(--ok)" strokeWidth={1.5} dot={false} strokeDasharray="4 2" name={overlayCard.name} />
-            )}
-            {overlay && overlayCard && <Legend wrapperStyle={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)" }} />}
+            {overlayCards?.map((oc, idx) => (
+              <Line key={oc.name} yAxisId="right" type="monotone" dataKey={`ov${idx}`}
+                stroke={OVERLAY_COLORS[idx % OVERLAY_COLORS.length]} strokeWidth={1.5}
+                dot={false} strokeDasharray="4 2" name={oc.name} />
+            ))}
+            {hasOverlays && <Legend wrapperStyle={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)" }} />}
           </LineChart>
         ) : (
           <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
@@ -104,7 +117,11 @@ function ChartPanel({
             <YAxis tick={{ fontFamily: "var(--mono)", fontSize: 9, fill: "var(--ink-3)" }} tickLine={false} axisLine={false} domain={["auto", "auto"]} />
             <Tooltip {...tooltipStyle} />
             {events.map(ev => (
-              <ReferenceLine key={ev.day} x={ev.day} stroke="var(--warn)" strokeDasharray="2 3" strokeWidth={1} />
+              <ReferenceLine key={`ev-${ev.day}`} x={ev.day} stroke="var(--ink-3)" strokeDasharray="2 4" strokeWidth={1} />
+            ))}
+            {regimeChanges?.map(rc => (
+              <ReferenceLine key={`rc-${rc.dayIndex}`} x={rc.dayIndex + 1}
+                stroke={rc.color} strokeDasharray="1 2" strokeWidth={2} />
             ))}
             <Bar dataKey="primary" fill="var(--accent)" opacity={0.75} radius={0} name={card.name} />
           </BarChart>
@@ -145,16 +162,27 @@ export default function TrendsPage() {
   // Pivot chart
   const [pivotMetric, setPivotMetric] = useState(cards[0].name)
   const [chartType, setChartType] = useState<ChartType>("line")
-  const [overlayMetric, setOverlayMetric] = useState<string>("none")
+  const [overlayMetrics, setOverlayMetrics] = useState<string[]>([])
   const [pinned, setPinned] = useState<typeof pinnedViews>(pinnedViews)
 
   const activeCard = cards.find(c => c.name === pivotMetric) ?? cards[0]
-  const overlayCard = cards.find(c => c.name === overlayMetric)
+  const overlayCards = cards.filter(c => overlayMetrics.includes(c.name))
+
+  function toggleOverlay(name: string) {
+    setOverlayMetrics(prev => {
+      if (prev.includes(name)) return prev.filter(m => m !== name)
+      if (prev.length >= 3) return prev
+      return [...prev, name]
+    })
+  }
 
   function pinCurrentView() {
     if (pinned.length >= 3) return
-    const title = overlayCard ? `${activeCard.name.split(" ")[0]} + ${overlayCard.name.split(" ")[0]}` : `${activeCard.name} · ${period}`
-    setPinned(p => [...p, { id: `p${Date.now()}`, title, metrics: overlayCard ? [activeCard.name, overlayCard.name] : [activeCard.name], pinnedBy: "Darcy · now" }])
+    const title = overlayCards.length
+      ? `${activeCard.name.split(" ")[0]} + ${overlayCards.map(o => o.name.split(" ")[0]).join(" + ")}`
+      : `${activeCard.name} · ${period}`
+    const metrics = [activeCard.name, ...overlayCards.map(o => o.name)]
+    setPinned(p => [...p, { id: `p${Date.now()}`, title, metrics, pinnedBy: "Darcy · now" }])
   }
 
   // Pivot table — heat map by day of week
@@ -289,15 +317,8 @@ export default function TrendsPage() {
           <div className="pivot-controls">
             <label>
               Metric
-              <select value={pivotMetric} onChange={e => setPivotMetric(e.target.value)}>
+              <select value={pivotMetric} onChange={e => { setPivotMetric(e.target.value); setOverlayMetrics([]) }}>
                 {cards.map(c => <option key={c.name}>{c.name}</option>)}
-              </select>
-            </label>
-            <label>
-              Overlay
-              <select value={overlayMetric} onChange={e => setOverlayMetric(e.target.value)}>
-                <option value="none">None</option>
-                {cards.filter(c => c.name !== pivotMetric).map(c => <option key={c.name}>{c.name}</option>)}
               </select>
             </label>
             <label>
@@ -318,6 +339,39 @@ export default function TrendsPage() {
           </div>
         </div>
 
+        {/* Multi-metric overlay selector */}
+        <div style={{ padding: "10px 20px 0", borderTop: "1px solid var(--hair)" }}>
+          <div style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-3)", marginBottom: 6 }}>
+            Overlay metrics · up to 3
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {cards.filter(c => c.name !== pivotMetric).map((c, idx) => {
+              const active = overlayMetrics.includes(c.name)
+              const colorIdx = overlayMetrics.indexOf(c.name)
+              const color = active ? OVERLAY_COLORS[colorIdx] : "var(--ink-3)"
+              const disabled = !active && overlayMetrics.length >= 3
+              return (
+                <button
+                  key={c.name}
+                  onClick={() => !disabled && toggleOverlay(c.name)}
+                  style={{
+                    fontFamily: "var(--mono)", fontSize: 9, letterSpacing: "0.06em",
+                    padding: "3px 8px",
+                    border: `1px solid ${active ? color : "var(--hair-strong)"}`,
+                    background: active ? `${color}18` : "transparent",
+                    color: disabled ? "var(--ink-4)" : color,
+                    cursor: disabled ? "not-allowed" : "pointer",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {active && <span style={{ marginRight: 4 }}>●</span>}
+                  {c.name.split(" ")[0]} {c.unit && <span style={{ opacity: 0.6 }}>{c.unit}</span>}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
         <div style={{ padding: "0 20px 20px" }}>
           <div style={{ display: "flex", gap: 24, marginBottom: 12, paddingTop: 12, flexWrap: "wrap" }}>
             <div>
@@ -330,18 +384,22 @@ export default function TrendsPage() {
               <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Delta</div>
               <div style={{ fontFamily: "var(--mono)", fontSize: 14, color: "var(--ink-2)", marginTop: 2 }}>{activeCard.delta}</div>
             </div>
-            {overlayCard && (
-              <div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Overlay</div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 14, color: "var(--ok)", marginTop: 2 }}>{overlayCard.now} <span style={{ fontSize: 10, color: "var(--ink-3)" }}>{overlayCard.unit}</span></div>
+            {overlayCards.map((oc, idx) => (
+              <div key={oc.name}>
+                <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  Overlay {idx + 1}
+                </div>
+                <div style={{ fontFamily: "var(--mono)", fontSize: 14, color: OVERLAY_COLORS[idx], marginTop: 2 }}>
+                  {oc.now} <span style={{ fontSize: 10, color: "var(--ink-3)" }}>{oc.unit}</span>
+                </div>
               </div>
-            )}
+            ))}
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Agent note</div>
               <div style={{ fontSize: 12, color: "var(--ink-2)", lineHeight: 1.5, marginTop: 2, fontStyle: "italic" }}>{activeCard.note}</div>
             </div>
           </div>
-          <ChartPanel card={activeCard} events={events} type={chartType} overlay={!!overlayCard} overlayCard={overlayCard} />
+          <ChartPanel card={activeCard} events={events} regimeChanges={DATA.checkin.regimeChanges} type={chartType} overlayCards={overlayCards.length ? overlayCards : undefined} />
         </div>
       </div>
 
@@ -357,7 +415,7 @@ export default function TrendsPage() {
           <div style={{ display: "grid", gridTemplateColumns: `repeat(${pinned.length}, 1fr)`, borderLeft: "1px solid var(--hair)" }}>
             {pinned.map(pv => {
               const pc = cards.find(c => c.name === pv.metrics[0]) ?? cards[0]
-              const po = cards.find(c => c.name === pv.metrics[1])
+              const pinnedOverlays = pv.metrics.slice(1).map(m => cards.find(c => c.name === m)).filter(Boolean) as typeof cards
               return (
                 <div key={pv.id} style={{ borderRight: "1px solid var(--hair)", padding: "14px 16px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
@@ -369,7 +427,7 @@ export default function TrendsPage() {
                       Unpin
                     </button>
                   </div>
-                  <ChartPanel card={pc} events={events} type="line" overlay={!!po} overlayCard={po} />
+                  <ChartPanel card={pc} events={events} type="line" overlayCards={pinnedOverlays.length ? pinnedOverlays : undefined} />
                   <div style={{ marginTop: 6, fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{pv.pinnedBy}</div>
                 </div>
               )

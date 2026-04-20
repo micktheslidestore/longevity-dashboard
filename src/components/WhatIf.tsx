@@ -53,7 +53,7 @@ export default function WhatIf({ currentZ, currentAL }: WhatIfProps) {
         fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase",
         letterSpacing: "0.12em", color: "var(--ink-3)", marginBottom: 16,
       }}>
-        What-if simulation
+        Course correction calculator
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>

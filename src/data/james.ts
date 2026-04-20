@@ -488,6 +488,76 @@ export const DATA = {
   // 30-day IRT input series: index 0 = Mar 21 2026, index 29 = Apr 19 2026
   rawTimeSeries: genTimeSeries(),
 
+  // Strategy Command Centre
+  command: {
+    cyclephase: {
+      current: 1, // 0=strategy-set 1=readings-taken 2=remeasurement 3=adjusted
+      phases: [
+        { label: "Strategy Set",     date: "01 Jan 2026", done: true,  upcoming: false },
+        { label: "Readings Taken",   date: "02 Apr 2026", done: true,  upcoming: false },
+        { label: "Remeasurement",    date: "22 Apr 2026", done: false, upcoming: true  },
+        { label: "Strategy Adjusted",date: "29 Apr 2026", done: false, upcoming: false },
+      ],
+    },
+
+    jtbd: {
+      coachProgramme: [
+        { id: "cp1", done: false, text: "Finalise Q2 ApoB protocol adjustments from Q1 bloods" },
+        { id: "cp2", done: true,  text: "Set fibre adherence logging requirement — 89%+ weekly minimum" },
+        { id: "cp3", done: false, text: "Draft pre-quarter taper protocol for July board cycle" },
+        { id: "cp4", done: false, text: "Review DEXA results (22 Apr) and update body composition targets" },
+      ],
+      coachDaily: [
+        { id: "cd1", done: true,  text: "Review agent flags before 07:30 each morning" },
+        { id: "cd2", done: false, text: "Countersign or dismiss agent drafts within 24 h" },
+        { id: "cd3", done: true,  text: "Publish morning directive before Jamie's first check-in" },
+        { id: "cd4", done: false, text: "Log coaching call notes in Allostatic after each session" },
+      ],
+      clientProgramme: [
+        { id: "jcp1", done: false, text: "Complete DEXA + VO₂max retest — Wed 22 Apr, fasted from 20:30" },
+        { id: "jcp2", done: true,  text: "Maintain fibre logging ≥ 89% compliance this quarter" },
+        { id: "jcp3", done: false, text: "Drive ApoB to ≤ 70 mg/dL by Q3 bloods (02 Jul)" },
+        { id: "jcp4", done: true,  text: "Zone-2 ≥ 160 min/week — adjusted from 180 for board cycles" },
+      ],
+      clientDaily: [
+        { id: "jcd1", done: true,  text: "Morning check-in before 08:00 — 14-day streak active" },
+        { id: "jcd2", done: false, text: "Log fibre intake at end of day" },
+        { id: "jcd3", done: true,  text: "4-7-8 breathing if mental load > 7" },
+        { id: "jcd4", done: false, text: "Review Darcy's directive before training session" },
+      ],
+    },
+
+    dataHealth: [
+      { metric: "HRV (rMSSD)",     source: "Oura Ring Gen 4",   type: "wearable", status: "connected", lastUpdated: "Today 06:41", nextExpected: "Tomorrow",    notes: null },
+      { metric: "Resting HR",      source: "Oura Ring Gen 4",   type: "wearable", status: "connected", lastUpdated: "Today 06:41", nextExpected: "Tomorrow",    notes: null },
+      { metric: "Sleep efficiency",source: "Oura Ring Gen 4",   type: "wearable", status: "connected", lastUpdated: "Today 06:41", nextExpected: "Tomorrow",    notes: null },
+      { metric: "Deep sleep",      source: "Oura Ring Gen 4",   type: "wearable", status: "connected", lastUpdated: "Today 06:41", nextExpected: "Tomorrow",    notes: null },
+      { metric: "Skin temp Δ",     source: "Oura Ring Gen 4",   type: "wearable", status: "connected", lastUpdated: "Today 06:41", nextExpected: "Tomorrow",    notes: null },
+      { metric: "Glucose SD (CGM)",source: "Garmin Fenix 8",    type: "wearable", status: "connected", lastUpdated: "Today 06:40", nextExpected: "Tomorrow",    notes: "CGM via Garmin Connect" },
+      { metric: "Body weight",     source: "Withings Scale",    type: "wearable", status: "connected", lastUpdated: "Today 07:12", nextExpected: "Tomorrow",    notes: null },
+      { metric: "Body fat %",      source: "Withings Scale",    type: "wearable", status: "connected", lastUpdated: "Today 07:12", nextExpected: "Tomorrow",    notes: "BIA — confirmed quarterly by DEXA" },
+      { metric: "VO₂max (est.)",   source: "Garmin Fenix 8",    type: "wearable", status: "connected", lastUpdated: "Today 06:40", nextExpected: "Tomorrow",    notes: "Lab retest Wed 22 Apr" },
+      { metric: "hs-CRP",          source: "Quarterly bloods",  type: "blood",    status: "current",   lastUpdated: "02 Apr 2026", nextExpected: "02 Jul 2026", notes: null },
+      { metric: "Fibrinogen",      source: "Quarterly bloods",  type: "blood",    status: "current",   lastUpdated: "02 Apr 2026", nextExpected: "02 Jul 2026", notes: null },
+      { metric: "Fasting insulin", source: "Quarterly bloods",  type: "blood",    status: "current",   lastUpdated: "02 Apr 2026", nextExpected: "02 Jul 2026", notes: null },
+      { metric: "Cortisol AM",     source: "Quarterly bloods",  type: "blood",    status: "warn",      lastUpdated: "02 Apr 2026", nextExpected: "02 Jul 2026", notes: "Trending high — consider interim retest" },
+      { metric: "ApoB",            source: "Quarterly bloods",  type: "blood",    status: "current",   lastUpdated: "02 Apr 2026", nextExpected: "02 Jul 2026", notes: "Key target: ≤ 70 mg/dL" },
+    ] as { metric: string; source: string; type: string; status: string; lastUpdated: string; nextExpected: string; notes: string | null }[],
+
+    quarterlyStrategy: {
+      quarter: "Q2 2026",
+      lockedBy: "Darcy O'Sullivan · 02 Apr 2026",
+      exercise:
+        "Zone-2 ≥ 160 min/week (adjusted from 180 for board-cycle weeks). No intensity training during autonomic flag events. Lactate threshold test: Wed 22 Apr. Target VO₂max 50 ml/kg/min by Q3.",
+      fuelling:
+        "Fibre ≥ 89% weekly adherence. ApoB protocol: psyllium husk daily, legume logging, omega-3 3 g/day. No caffeine post-14:00. CGM SD target < 14 mg/dL.",
+      lifestyle:
+        "Board-cycle protocol: 8-min breathing sequence on days preceding major events. Pre-quarter taper to be formalised before July cycle. Wind-down routine enforced — no screens after 21:30. Sauna 3×/week.",
+      agentDirective:
+        "Monitor HRV 72 h windows. Flag autonomic events before 07:30. Track fibre adherence weekly. Forward cortisol flag to Darcy if AM cortisol retest > 20 µg/dL. Prepare DEXA comparison analysis after 22 Apr retest.",
+    },
+  },
+
   // Quarterly review — auto-populated when a quarter closes
   quarterlyReview: {
     quarter: "Q1 2026",
