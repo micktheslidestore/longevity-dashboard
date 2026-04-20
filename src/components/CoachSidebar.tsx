@@ -7,7 +7,7 @@ import { NavIcon, type IconKey } from "./NavIcons"
 
 const PRIMARY_NAV: { key: string; icon: IconKey; label: string; href: string }[] = [
   { key: "command",      icon: "command",      label: "Command Centre", href: "/coach/command" },
-  { key: "dashboard",    icon: "dashboard",    label: "Dashboard",      href: "/coach" },
+  { key: "dashboard",    icon: "dashboard",    label: "Dashboard",      href: "/coach/dashboard" },
   { key: "compliance",   icon: "compliance",   label: "Compliance",     href: "/coach/compliance" },
   { key: "trends",       icon: "trends",       label: "Trends",         href: "/coach/trends" },
   { key: "medical",      icon: "medical",      label: "Medical",        href: "/coach/medical" },
@@ -53,7 +53,7 @@ export default function CoachSidebar() {
 
   function isActive(href: string) {
     const base = href.split("#")[0]
-    return base === "/coach" ? pathname === "/coach" : pathname.startsWith(base)
+    return pathname.startsWith(base)
   }
 
   return (
