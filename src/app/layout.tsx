@@ -1,8 +1,7 @@
 import type { Metadata } from "next"
 import "./globals.css"
 import { AppProviders } from "@/components/RoleContext"
-import Sidebar from "@/components/Sidebar"
-import Topbar from "@/components/Topbar"
+import { AppShell } from "@/components/AppShell"
 
 export const metadata: Metadata = {
   title: "Allostatic",
@@ -19,15 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <AppProviders>
-          <div className="app">
-            <Sidebar />
-            <div className="main">
-              <Topbar />
-              <div className="screen">
-                {children}
-              </div>
-            </div>
-          </div>
+          <AppShell>{children}</AppShell>
         </AppProviders>
       </body>
     </html>

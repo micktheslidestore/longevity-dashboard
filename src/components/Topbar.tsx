@@ -16,7 +16,7 @@ const ACCENTS: Array<[string, string]> = [["amber", "#C8A56A"], ["teal", "#7FA99
 
 export default function Topbar() {
   const pathname = usePathname()
-  const { role, setRole, accent, setAccent, theme, setTheme } = useApp()
+  const { accent, setAccent, theme, setTheme } = useApp()
   const [tweaksOpen, setTweaksOpen] = useState(false)
 
   const current = SCREENS.find(s => s.href === pathname || (s.href !== "/" && pathname.startsWith(s.href)))
@@ -33,14 +33,6 @@ export default function Topbar() {
           <span className="tick">RHR <strong>52</strong></span>
           <span className="tick">HRV <strong>41</strong></span>
           <span className="tick">SLP <strong>6.2h</strong></span>
-          <div className="role-switch">
-            <button data-on={role === "james"} onClick={() => setRole("james")}>
-              <span className="dot-role" /> Jamie
-            </button>
-            <button data-on={role === "darcy"} onClick={() => setRole("darcy")}>
-              <span className="dot-role round" /> Darcy
-            </button>
-          </div>
           <button
             onClick={() => setTweaksOpen(o => !o)}
             style={{ fontFamily: "var(--mono)", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-3)", border: "1px solid var(--hair-strong)", padding: "4px 8px" }}
