@@ -4,6 +4,123 @@ import { useState } from "react"
 import { DATA } from "@/data/james"
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, ReferenceLine, Tooltip } from "recharts"
 
+// ─── Biomarker pace + action view ────────────────────────────────────────────
+
+type PaceStatus = "on-pace" | "watch" | "off-pace" | "flag"
+
+const BIOMARKER_PACE: {
+  name: string; unit: string; current: number | string; target: string
+  status: PaceStatus; verdict: string; thisWeek: string; action: string
+}[] = [
+  {
+    name: "ApoB cholesterol",
+    unit: "mg/dL",
+    current: 84,
+    target: "≤70 by 2 Jul",
+    status: "off-pace",
+    verdict: "Projected 77 mg/dL at Q3 end — 7 above target at current rate",
+    thisWeek: "Fibre adherence is at 86%, needs to reach 94%+ to close the gap. The difference between 86% and 94% adherence is approximately 3–4 mg/dL of ApoB movement per quarter.",
+    action: "Push fibre reminder to Jamie this week. Flag the 7-point shortfall for Dr. Rao at the May cardiology consult — a statin dose adjustment may be the deciding factor.",
+  },
+  {
+    name: "HRV floor",
+    unit: "ms",
+    current: 41,
+    target: "≥48 sustained",
+    status: "flag",
+    verdict: "11 ms below baseline for 3 consecutive nights — flag active",
+    thisWeek: "Autonomic suppression is the current priority. Board-cycle stress and incomplete sleep recovery are the most likely drivers. Pattern matches the February setback.",
+    action: "Hold intensity through Wednesday. If flag persists beyond day 8 without improvement, escalate to Dr. Rao. Reassess after DEXA results.",
+  },
+  {
+    name: "Fibrinogen",
+    unit: "mg/dL",
+    current: 342,
+    target: "<320",
+    status: "watch",
+    verdict: "Rising trend over 2 quarters (318 → 342) — no active intervention yet",
+    thisWeek: "No immediate risk, but the upward trend needs a response before Q3 bloods. Omega-3 dose increase and anti-inflammatory diet additions are the primary levers.",
+    action: "Add fibrinogen to the 29 Apr protocol review agenda. Discuss omega-3 dose optimisation and consider adding curcumin to the supplement stack.",
+  },
+  {
+    name: "VO₂max",
+    unit: "mL/kg/min",
+    current: 44,
+    target: "≥47 by Q3",
+    status: "watch",
+    verdict: "Improving slowly (+1/quarter) — DEXA retest Wednesday gives objective reading",
+    thisWeek: "Zone-2 volume is at 51% of weekly target due to hold-intensity corrector. This week's shortfall won't affect the trend materially — the DEXA retest is the key data point.",
+    action: "Wait for Wednesday's VO₂max result before adjusting volume targets. If below 45, consider extending the weekly target to 180 min once the autonomic flag clears.",
+  },
+]
+
+const PACE_STYLE: Record<PaceStatus, { label: string; color: string }> = {
+  "on-pace":  { label: "On pace",  color: "var(--ok)" },
+  "watch":    { label: "Watch",    color: "#9B8FA9" },
+  "off-pace": { label: "Off pace", color: "var(--warn)" },
+  "flag":     { label: "Flag",     color: "var(--alert)" },
+}
+
+function BiomarkerPace() {
+  const [selected, setSelected] = useState<string | null>(null)
+
+  return (
+    <div className="panel">
+      <div className="panel-head">
+        <span>Biomarker pace · Q2 2026</span>
+        <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>What this means this week · click for action</span>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: "var(--hair)" }}>
+        {BIOMARKER_PACE.map(bm => {
+          const ps = PACE_STYLE[bm.status]
+          const isSelected = selected === bm.name
+          return (
+            <div
+              key={bm.name}
+              onClick={() => setSelected(isSelected ? null : bm.name)}
+              style={{ background: isSelected ? "var(--panel-2)" : "var(--bg)", cursor: "pointer", borderLeft: isSelected ? `3px solid ${ps.color}` : "3px solid transparent" }}
+            >
+              {/* Summary row */}
+              <div style={{ padding: "20px 22px 16px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                  <div>
+                    <div style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-3)", marginBottom: 4 }}>{bm.name}</div>
+                    <div style={{ fontFamily: "var(--mono)", fontSize: 24, letterSpacing: "-0.03em", color: "var(--ink)", lineHeight: 1 }}>
+                      {bm.current} <span style={{ fontSize: 10, color: "var(--ink-3)", letterSpacing: 0 }}>{bm.unit}</span>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontFamily: "var(--mono)", fontSize: 8, padding: "3px 8px", border: `1px solid ${ps.color}`, color: ps.color, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>{ps.label}</div>
+                    <div style={{ fontFamily: "var(--mono)", fontSize: 8, color: "var(--ink-4)" }}>Target: {bm.target}</div>
+                  </div>
+                </div>
+                <div style={{ fontSize: 12, color: "var(--ink-3)", lineHeight: 1.55 }}>{bm.verdict}</div>
+              </div>
+
+              {/* Expanded action view */}
+              {isSelected && (
+                <div style={{ padding: "0 22px 22px", borderTop: "1px solid var(--hair)" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, paddingTop: 16 }}>
+                    <div>
+                      <div style={{ fontFamily: "var(--mono)", fontSize: 7.5, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-4)", marginBottom: 8 }}>What this means this week</div>
+                      <p style={{ fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.65, margin: 0 }}>{bm.thisWeek}</p>
+                    </div>
+                    <div style={{ borderLeft: `2px solid ${ps.color}`, paddingLeft: 16 }}>
+                      <div style={{ fontFamily: "var(--mono)", fontSize: 7.5, textTransform: "uppercase", letterSpacing: "0.1em", color: ps.color, marginBottom: 8 }}>Action</div>
+                      <p style={{ fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.65, margin: 0 }}>{bm.action}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ─── Medical Roadmap ─────────────────────────────────────────────────────────
 
 const MILESTONES = [
@@ -256,6 +373,9 @@ export default function MedicalPage() {
           )}
         </div>
       </div>
+
+      {/* Biomarker pace — action view, not reporting */}
+      <BiomarkerPace />
 
       {/* Medical roadmap */}
       <MedicalRoadmap />

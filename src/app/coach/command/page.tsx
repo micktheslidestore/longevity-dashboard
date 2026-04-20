@@ -51,6 +51,80 @@ function Modal({ title, body, onClose, onConfirm, confirmLabel }: {
   )
 }
 
+// ─── Decision layer ───────────────────────────────────────────────────────────
+
+function DecisionLayer() {
+  const [status, setStatus] = useState<"pending" | "approved" | "dismissed">("pending")
+
+  if (status === "approved") return (
+    <div style={{ padding: "28px 36px", border: "1px solid color-mix(in srgb, var(--ok) 30%, transparent)", borderLeft: "3px solid var(--ok)", background: "color-mix(in srgb, var(--ok) 4%, transparent)" }}>
+      <div style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--ok)", marginBottom: 4 }}>✓ Recommendation approved · pushed to Jamie</div>
+      <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-3)" }}>Jamie will see the updated corrector when he next opens the app. Agent briefing updated.</div>
+    </div>
+  )
+
+  if (status === "dismissed") return null
+
+  return (
+    <div style={{ border: "1px solid var(--hair-strong)", padding: "40px 44px", background: "var(--bg)" }}>
+      {/* Label */}
+      <div style={{ fontFamily: "var(--mono)", fontSize: 8.5, textTransform: "uppercase", letterSpacing: "0.14em", color: "var(--ink-4)", marginBottom: 24 }}>
+        Decision required · {DATA.user.today}
+      </div>
+
+      {/* Situation — large, calm, serif */}
+      <p style={{ fontFamily: "var(--serif)", fontSize: 21, fontWeight: 300, lineHeight: 1.7, color: "var(--ink)", margin: "0 0 36px", maxWidth: 620 }}>
+        Jamie's allostatic load has been elevated for three consecutive days.
+        The autonomic flag from 17 Apr has not resolved — his HRV is still suppressed and a board call this morning adds further cortisol load.
+      </p>
+
+      {/* Three supporting data points */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 32, marginBottom: 36, paddingBottom: 36, borderBottom: "1px solid var(--hair)" }}>
+        {[
+          { label: "HRV last night", value: "41 ms", sub: "−11 vs his baseline of 52 ms", color: "var(--warn)" },
+          { label: "Corrector status", value: "Day 3", sub: "Hold-intensity active since 17 Apr", color: "var(--ink)" },
+          { label: "Today's context", value: "Board call", sub: "09:00 · anticipatory stress expected", color: "var(--ink)" },
+        ].map(item => (
+          <div key={item.label}>
+            <div style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--ink-4)", marginBottom: 10 }}>{item.label}</div>
+            <div style={{ fontFamily: "var(--mono)", fontSize: 26, letterSpacing: "-0.03em", color: item.color, lineHeight: 1, marginBottom: 8 }}>{item.value}</div>
+            <div style={{ fontSize: 13, color: "var(--ink-3)", lineHeight: 1.55 }}>{item.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Recommendation */}
+      <div style={{ borderLeft: "2px solid var(--ok)", paddingLeft: 24, marginBottom: 32 }}>
+        <div style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--ink-4)", marginBottom: 10 }}>Recommendation</div>
+        <p style={{ fontSize: 14, color: "var(--ink-2)", lineHeight: 1.75, margin: 0, maxWidth: 580 }}>
+          Maintain the intensity hold through Wednesday 23 Apr. Zone-2 only — heart rate below 135 bpm — or full rest.
+          Reassess after DEXA and VO₂max retest results come through Wednesday afternoon.
+          If HRV shows two consecutive nights above 44 ms before then, the hold can be lifted early.
+        </p>
+      </div>
+
+      {/* Action buttons */}
+      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+        <button
+          onClick={() => setStatus("approved")}
+          style={{ fontFamily: "var(--mono)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", border: "none", background: "var(--ok)", color: "var(--bg)", padding: "12px 28px", cursor: "pointer" }}
+        >
+          Approve and push to Jamie →
+        </button>
+        <button style={{ fontFamily: "var(--mono)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", border: "1px solid var(--hair-strong)", background: "transparent", color: "var(--ink-2)", padding: "12px 20px", cursor: "pointer" }}>
+          Modify
+        </button>
+        <button
+          onClick={() => setStatus("dismissed")}
+          style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", border: "none", background: "transparent", color: "var(--ink-4)", padding: "12px 16px", cursor: "pointer" }}
+        >
+          Not now
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ─── Agent panel ──────────────────────────────────────────────────────────────
 
 interface Msg { role: "agent" | "coach"; text: string; time: string }
@@ -375,6 +449,7 @@ function WorkflowCommand() {
 interface ToastMsg { id: number; text: string }
 
 function JTBDWithActions() {
+  const [collapsed, setCollapsed] = useState(true)
   const [checked, setChecked] = useState<Record<string, boolean>>(
     Object.fromEntries([
       ...command.jtbd.coachProgramme.map(i => [i.id, i.done]),
@@ -444,30 +519,44 @@ function JTBDWithActions() {
 
   return (
     <div className="panel" style={{ position: "relative" }}>
-      <div className="panel-head">
-        <span>Programme checklist</span>
-        <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Action buttons push to dashboard or generate outputs</span>
+      <div className="panel-head" onClick={() => setCollapsed(c => !c)} style={{ cursor: "pointer" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span>Programme checklist</span>
+          {collapsed && (
+            <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)" }}>
+              {Object.values(checked).filter(Boolean).length}/{Object.values(checked).length} complete
+            </span>
+          )}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {!collapsed && <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Action buttons push to dashboard or generate outputs</span>}
+          <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)" }}>{collapsed ? "▼" : "▲"}</span>
+        </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
-        <div style={{ borderRight: "1px solid var(--hair)" }}>
-          {renderBucket("Your tasks · Programme", command.jtbd.coachProgramme, "var(--ok)")}
-          {renderBucket("Your tasks · Today", command.jtbd.coachDaily, "var(--ok)")}
-        </div>
-        <div>
-          {renderBucket("Jamie · Programme goals", command.jtbd.clientProgramme, "var(--accent)")}
-          {renderBucket("Jamie · Daily habits", command.jtbd.clientDaily, "var(--accent)")}
-        </div>
-      </div>
-
-      {/* Toast stack */}
-      <div style={{ position: "fixed", bottom: 24, right: 24, display: "flex", flexDirection: "column", gap: 8, zIndex: 100 }}>
-        {toasts.map(t => (
-          <div key={t.id} style={{ background: "var(--panel-2)", border: "1px solid var(--ok)", padding: "10px 16px", fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-2)", maxWidth: 340, boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
-            <span style={{ color: "var(--ok)", marginRight: 8 }}>✓</span>{t.text}
+      {!collapsed && (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+            <div style={{ borderRight: "1px solid var(--hair)" }}>
+              {renderBucket("Your tasks · Programme", command.jtbd.coachProgramme, "var(--ok)")}
+              {renderBucket("Your tasks · Today", command.jtbd.coachDaily, "var(--ok)")}
+            </div>
+            <div>
+              {renderBucket("Jamie · Programme goals", command.jtbd.clientProgramme, "var(--accent)")}
+              {renderBucket("Jamie · Daily habits", command.jtbd.clientDaily, "var(--accent)")}
+            </div>
           </div>
-        ))}
-      </div>
+
+          {/* Toast stack */}
+          <div style={{ position: "fixed", bottom: 24, right: 24, display: "flex", flexDirection: "column", gap: 8, zIndex: 100 }}>
+            {toasts.map(t => (
+              <div key={t.id} style={{ background: "var(--panel-2)", border: "1px solid var(--ok)", padding: "10px 16px", fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-2)", maxWidth: 340, boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
+                <span style={{ color: "var(--ok)", marginRight: 8 }}>✓</span>{t.text}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -476,13 +565,17 @@ function JTBDWithActions() {
 
 function QuarterlyHistory() {
   const [open, setOpen] = useState<string | null>(null)
+  const [panelCollapsed, setPanelCollapsed] = useState(true)
   return (
     <div className="panel">
-      <div className="panel-head">
+      <div className="panel-head" onClick={() => setPanelCollapsed(c => !c)} style={{ cursor: "pointer" }}>
         <span>Quarterly history</span>
-        <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>End-of-quarter reports · growing timeline</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {!panelCollapsed && <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>End-of-quarter reports · growing timeline</span>}
+          <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)" }}>{panelCollapsed ? "▼" : "▲"}</span>
+        </div>
       </div>
-      {QUARTER_HISTORY.map((q, i) => (
+      {!panelCollapsed && QUARTER_HISTORY.map((q, i) => (
         <div key={q.id} style={{ borderTop: i > 0 ? "1px solid var(--hair)" : undefined }}>
           <div onClick={() => setOpen(open === q.id ? null : q.id)} style={{ padding: "14px 22px", display: "flex", alignItems: "center", gap: 16, cursor: "pointer" }}>
             <div style={{ width: 10, height: 10, borderRadius: "50%", background: q.status === "active" ? "var(--ok)" : q.status === "closed" ? "var(--ink-3)" : "var(--hair-strong)", flexShrink: 0 }} />
@@ -526,7 +619,7 @@ export default function CoachCommandPage() {
   const [reportDone, setReportDone] = useState(false)
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: "24px 32px", maxWidth: 1300 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 32, padding: "24px 32px", maxWidth: 1300 }}>
 
       <div style={{ borderBottom: "1px solid var(--hair)", paddingBottom: 16 }}>
         <div style={{ fontFamily: "var(--mono)", fontSize: 8.5, textTransform: "uppercase", letterSpacing: "0.14em", color: "var(--ok)", marginBottom: 6 }}>
@@ -550,6 +643,8 @@ export default function CoachCommandPage() {
           </div>
         </div>
       </div>
+
+      <DecisionLayer />
 
       {/* Agent is first — the primary interface */}
       <AgentPanel />

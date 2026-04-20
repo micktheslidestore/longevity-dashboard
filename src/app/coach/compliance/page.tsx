@@ -3,6 +3,141 @@
 import { useState } from "react"
 import { DATA } from "@/data/james"
 
+// ─── Outcomes data ────────────────────────────────────────────────────────────
+
+type OutcomeStatus = "effective" | "monitoring" | "partial" | "pending"
+
+interface Outcome {
+  id: string
+  protocol: string
+  issuedDate: string
+  daysAgo: number
+  before: string
+  after: string | null
+  status: OutcomeStatus
+  verdict: string
+  note: string
+}
+
+const OUTCOMES: Outcome[] = [
+  {
+    id: "caffeine",
+    protocol: "Caffeine curfew after 14:00",
+    issuedDate: "22 Mar 2026",
+    daysAgo: 29,
+    before: "Deep sleep avg 41 min · HRV 48 ms",
+    after:  "Deep sleep avg 61 min · HRV 52 ms",
+    status: "effective",
+    verdict: "+20 min deep sleep · +4 ms HRV avg",
+    note: "The strongest protocol result this quarter. Sustained over 4 weeks. Jamie has maintained 100% adherence for 28 days. This change is worth locking permanently.",
+  },
+  {
+    id: "hold-intensity",
+    protocol: "Hold-intensity corrector",
+    issuedDate: "17 Apr 2026",
+    daysAgo: 3,
+    before: "HRV 52 ms (baseline) · RHR 48 bpm",
+    after: null,
+    status: "monitoring",
+    verdict: "Day 3 of hold — HRV stable at 41 ms, not yet recovering",
+    note: "Historical pattern match: February setback took 8 days to resolve. No further decline overnight — the hold is preventing worsening. Expect recovery to begin day 5–6 if load is maintained.",
+  },
+  {
+    id: "zone2-increase",
+    protocol: "Zone-2 volume increase to 160 min/week",
+    issuedDate: "01 Jan 2026",
+    daysAgo: 110,
+    before: "VO₂max est. 42 mL/kg/min · ApoB 99 mg/dL",
+    after:  "VO₂max est. 44 mL/kg/min · ApoB 84 mg/dL",
+    status: "partial",
+    verdict: "+2 mL/kg/min VO₂max · −15 mg/dL ApoB (fibre is the primary ApoB lever)",
+    note: "Zone-2 correlates r=+0.12 with ApoB delta — useful but not the main driver. The primary benefit has been cardiovascular adaptation and sleep architecture. Volume adherence averaging 68% of target across the quarter.",
+  },
+  {
+    id: "fibre",
+    protocol: "Daily fibre logging protocol",
+    issuedDate: "15 Nov 2025",
+    daysAgo: 156,
+    before: "ApoB 108 mg/dL · Fibre adherence unmeasured",
+    after:  "ApoB 84 mg/dL · Fibre adherence 86%",
+    status: "effective",
+    verdict: "−24 mg/dL ApoB over 5 quarters · r=+0.74 correlation",
+    note: "This is the single most impactful protocol in Jamie's programme. ApoB drops ~7 mg/dL per quarter when fibre adherence exceeds 89%. Current 86% adherence is 3 points below the threshold — close but not maximising the effect.",
+  },
+]
+
+const OUTCOME_STATUS_STYLE: Record<OutcomeStatus, { label: string; color: string }> = {
+  effective:  { label: "Effective",  color: "var(--ok)" },
+  monitoring: { label: "Monitoring", color: "var(--warn)" },
+  partial:    { label: "Partial",    color: "#9B8FA9" },
+  pending:    { label: "Pending",    color: "var(--ink-3)" },
+}
+
+function OutcomesSection() {
+  const [selected, setSelected] = useState<string | null>(null)
+
+  return (
+    <div className="panel">
+      <div className="panel-head">
+        <span>Outcomes · did it work?</span>
+        <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+          {OUTCOMES.filter(o => o.status === "effective").length} effective · {OUTCOMES.filter(o => o.status === "monitoring").length} monitoring · {OUTCOMES.filter(o => o.status === "partial").length} partial
+        </span>
+      </div>
+
+      <div style={{ padding: "6px 0" }}>
+        {OUTCOMES.map((outcome, i) => {
+          const style = OUTCOME_STATUS_STYLE[outcome.status]
+          const isSelected = selected === outcome.id
+          return (
+            <div key={outcome.id} style={{ borderTop: i > 0 ? "1px solid var(--hair)" : undefined }}>
+              <div
+                onClick={() => setSelected(isSelected ? null : outcome.id)}
+                style={{ padding: "18px 24px", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: 20 }}
+              >
+                {/* Status badge */}
+                <div style={{ flexShrink: 0, paddingTop: 2 }}>
+                  <div style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.1em", color: style.color, border: `1px solid ${style.color}`, padding: "2px 8px", whiteSpace: "nowrap" }}>
+                    {style.label}
+                  </div>
+                </div>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--ink)", marginBottom: 4 }}>{outcome.protocol}</div>
+                  <div style={{ fontFamily: "var(--mono)", fontSize: 8.5, color: "var(--ink-4)", marginBottom: 8 }}>Issued {outcome.issuedDate} · {outcome.daysAgo} days ago</div>
+
+                  {/* Before / After */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 12, alignItems: "center", marginBottom: 6 }}>
+                    <div>
+                      <div style={{ fontFamily: "var(--mono)", fontSize: 7.5, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-4)", marginBottom: 3 }}>Before</div>
+                      <div style={{ fontSize: 11.5, color: "var(--ink-3)", lineHeight: 1.4 }}>{outcome.before}</div>
+                    </div>
+                    <div style={{ fontFamily: "var(--mono)", fontSize: 14, color: "var(--hair-strong)" }}>→</div>
+                    <div>
+                      <div style={{ fontFamily: "var(--mono)", fontSize: 7.5, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-4)", marginBottom: 3 }}>After</div>
+                      <div style={{ fontSize: 11.5, color: outcome.after ? "var(--ink-2)" : "var(--ink-4)", lineHeight: 1.4 }}>{outcome.after ?? "Still measuring…"}</div>
+                    </div>
+                  </div>
+
+                  <div style={{ fontFamily: "var(--mono)", fontSize: 9.5, color: style.color, letterSpacing: "0.02em" }}>{outcome.verdict}</div>
+                </div>
+
+                <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-4)", flexShrink: 0 }}>{isSelected ? "▲" : "▼"}</div>
+              </div>
+
+              {isSelected && (
+                <div style={{ padding: "0 24px 20px 88px", borderTop: "1px solid var(--hair)" }}>
+                  <p style={{ fontSize: 13, color: "var(--ink-2)", lineHeight: 1.7, margin: "16px 0 0", maxWidth: 560 }}>{outcome.note}</p>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ─── Protocol adherence data ──────────────────────────────────────────────────
 
 const PROTOCOLS = [
@@ -152,6 +287,9 @@ export default function CoachCompliancePage() {
           </div>
         </div>
       </div>
+
+      {/* Outcomes — lead with this, not adherence */}
+      <OutcomesSection />
 
       {/* Flags */}
       {activeFlags.length > 0 && (
