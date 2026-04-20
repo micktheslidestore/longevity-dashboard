@@ -135,7 +135,7 @@ function ChartPanel({
 
 export default function TrendsPage() {
   const { role } = useApp()
-  const { corr, cards, insights, events, corrInsights, pivotData, pinnedViews } = DATA.trends
+  const { corr, cards, insights, events, corrInsights, pinnedViews } = DATA.trends
 
   // IRT computation
   const computed = useMemo(() => computeSeries(DATA.rawTimeSeries), [])
@@ -168,6 +168,44 @@ export default function TrendsPage() {
   const activeCard = cards.find(c => c.name === pivotMetric) ?? cards[0]
   const overlayCards = cards.filter(c => overlayMetrics.includes(c.name))
 
+  // Pivot deep dive
+  const [pivotCardName, setPivotCardName] = useState(cards[0].name)
+  const [selectedPivotCell, setSelectedPivotCell] = useState<[number, number] | null>(null)
+  const pivotCard = cards.find(c => c.name === pivotCardName) ?? cards[0]
+
+  // Build dynamic 4-week Mon–Sun grid from 30-day series
+  // data[0]=Sat Mar 21 … data[29]=Sun Apr 19
+  // W-4: Mon Mar 23=idx2 … Sun Mar 29=idx8
+  // W-3: Mon Mar 30=idx9 … Sun Apr 5=idx15
+  // W-2: Mon Apr 6=idx16 … Sun Apr 12=idx22
+  // W-1: Mon Apr 13=idx23 … Sun Apr 19=idx29
+  const PIVOT_ROWS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+  const PIVOT_WEEKS = ["W-4", "W-3", "W-2", "W-1"]
+  const pivotValues: number[][] = PIVOT_ROWS.map((_, di) =>
+    PIVOT_WEEKS.map((_, wi) => {
+      const idx = 2 + wi * 7 + di
+      return idx < pivotCard.data.length ? parseFloat(pivotCard.data[idx].toFixed(2)) : NaN
+    })
+  )
+  const allPivotVals = pivotValues.flat().filter(v => !isNaN(v))
+  const pvMin = Math.min(...allPivotVals)
+  const pvMax = Math.max(...allPivotVals)
+  const pvRange = pvMax - pvMin || 1
+  const pivotRowMeans = pivotValues.map(row => {
+    const v = row.filter(x => !isNaN(x))
+    return v.length ? parseFloat((v.reduce((a, b) => a + b, 0) / v.length).toFixed(2)) : NaN
+  })
+  const pivotRowMins  = pivotValues.map(row => Math.min(...row.filter(x => !isNaN(x))))
+  const pivotRowMaxes = pivotValues.map(row => Math.max(...row.filter(x => !isNaN(x))))
+  const pivotRowTrends = pivotValues.map(row => {
+    const early = row.slice(0, 2).filter(x => !isNaN(x))
+    const late  = row.slice(2).filter(x => !isNaN(x))
+    if (!early.length || !late.length) return "→"
+    const diff = late.reduce((a,b)=>a+b,0)/late.length - early.reduce((a,b)=>a+b,0)/early.length
+    if (Math.abs(diff) < pvRange * 0.04) return "→"
+    return diff > 0 ? "↑" : "↓"
+  })
+
   function toggleOverlay(name: string) {
     setOverlayMetrics(prev => {
       if (prev.includes(name)) return prev.filter(m => m !== name)
@@ -186,11 +224,6 @@ export default function TrendsPage() {
   }
 
   // Pivot table — heat map by day of week
-  const { rows: pivotRows, weeks, values } = pivotData
-  const allVals = values.flat()
-  const pvMin = Math.min(...allVals)
-  const pvMax = Math.max(...allVals)
-  const rowMeans = values.map(row => parseFloat((row.reduce((a, b) => a + b, 0) / row.length).toFixed(1)))
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: "24px 32px", maxWidth: 1300 }}>
@@ -436,46 +469,121 @@ export default function TrendsPage() {
         </div>
       )}
 
-      {/* ── Pivot heat-map table ─────────────────────────────────────────── */}
+      {/* ── Pivot deep dive ──────────────────────────────────────────────── */}
       <div className="panel">
         <div className="pivot-head">
           <div>
-            <span style={{ fontFamily: "var(--mono)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-2)" }}>Pivot · exploratory view</span>
-            <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", marginTop: 3 }}>Build your own slice · heat intensity = relative value</div>
+            <span style={{ fontFamily: "var(--mono)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-2)" }}>Pivot · day-of-week deep dive</span>
+            <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", marginTop: 3 }}>
+              4 complete weeks · Mon–Sun · heat = relative value · click any cell to inspect
+            </div>
           </div>
           <div className="pivot-controls">
-            <label>Rows <select defaultValue="Day of week"><option>Day of week</option></select></label>
-            <label>Metric <select defaultValue="Sleep h"><option>Sleep h</option></select></label>
-            <label>Weeks <select defaultValue="8"><option>8</option><option>4</option><option>12</option></select></label>
+            <label>
+              Metric
+              <select value={pivotCardName} onChange={e => { setPivotCardName(e.target.value); setSelectedPivotCell(null) }}>
+                {cards.map(c => <option key={c.name}>{c.name}</option>)}
+              </select>
+            </label>
           </div>
         </div>
+
+        {/* Selected cell detail */}
+        {selectedPivotCell && (() => {
+          const [ri, wi] = selectedPivotCell
+          const v = pivotValues[ri][wi]
+          const inBand = pivotCard.band && v >= pivotCard.band[0] && v <= pivotCard.band[1]
+          const [lo, hi] = pivotCard.band ?? [pvMin, pvMax]
+          return (
+            <div style={{ borderTop: "1px solid var(--hair)", padding: "12px 20px", display: "flex", gap: 24, alignItems: "center", background: "var(--panel-2)" }}>
+              <div>
+                <div style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-3)" }}>
+                  {PIVOT_ROWS[ri]} · {PIVOT_WEEKS[wi]}
+                </div>
+                <div style={{ fontFamily: "var(--mono)", fontSize: 22, letterSpacing: "-0.03em", color: "var(--ink)", marginTop: 2 }}>
+                  {v.toFixed(1)} <span style={{ fontSize: 10, color: "var(--ink-3)" }}>{pivotCard.unit}</span>
+                </div>
+              </div>
+              <div style={{ height: 36, width: 1, background: "var(--hair-strong)" }} />
+              <div>
+                <div style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--ink-3)" }}>Target band</div>
+                <div style={{ fontFamily: "var(--mono)", fontSize: 11, color: inBand ? "var(--ok)" : "var(--warn)", marginTop: 2 }}>
+                  {lo}–{hi} {pivotCard.unit} {inBand ? "✓ in range" : "⚠ out of band"}
+                </div>
+              </div>
+              <div style={{ height: 36, width: 1, background: "var(--hair-strong)" }} />
+              <div>
+                <div style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--ink-3)" }}>vs week mean</div>
+                <div style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--ink-2)", marginTop: 2 }}>
+                  {v > pivotRowMeans[ri] ? "+" : ""}{(v - pivotRowMeans[ri]).toFixed(2)}
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedPivotCell(null)}
+                style={{ marginLeft: "auto", fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", border: "1px solid var(--hair-strong)", background: "transparent", color: "var(--ink-3)", padding: "4px 10px", cursor: "pointer" }}
+              >
+                Close
+              </button>
+            </div>
+          )
+        })()}
+
         <div style={{ overflowX: "auto" }}>
           <table className="pivot-table" style={{ minWidth: 700 }}>
             <thead>
               <tr>
-                <th style={{ textAlign: "left" }}>Day of week</th>
-                {weeks.map(w => <th key={w}>{w}</th>)}
+                <th style={{ textAlign: "left" }}>Day</th>
+                {PIVOT_WEEKS.map(w => <th key={w}>{w}</th>)}
                 <th>Mean</th>
+                <th>Min</th>
+                <th>Max</th>
+                <th>Trend</th>
               </tr>
             </thead>
             <tbody>
-              {pivotRows.map((row, ri) => (
+              {PIVOT_ROWS.map((row, ri) => (
                 <tr key={row}>
                   <td style={{ textAlign: "left", color: "var(--ink-2)" }}>{row}</td>
-                  {values[ri].map((v, wi) => {
+                  {pivotValues[ri].map((v, wi) => {
                     const opacity = heatOpacity(v, pvMin, pvMax)
+                    const isSelected = selectedPivotCell?.[0] === ri && selectedPivotCell?.[1] === wi
                     return (
-                      <td key={wi} className="heat" style={{ "--heat": opacity } as React.CSSProperties}>
-                        <span>{v.toFixed(1)}</span>
+                      <td
+                        key={wi}
+                        className="heat"
+                        onClick={() => setSelectedPivotCell(isSelected ? null : [ri, wi])}
+                        style={{
+                          "--heat": opacity,
+                          cursor: "pointer",
+                          outline: isSelected ? "2px solid var(--warn)" : undefined,
+                          outlineOffset: "-2px",
+                        } as React.CSSProperties}
+                      >
+                        <span>{isNaN(v) ? "—" : v.toFixed(1)}</span>
                       </td>
                     )
                   })}
-                  <td style={{ color: "var(--ink-2)", fontWeight: 500 }}>{rowMeans[ri]}</td>
+                  <td style={{ color: "var(--ink-2)", fontWeight: 500 }}>{pivotRowMeans[ri].toFixed(1)}</td>
+                  <td style={{ color: "var(--ink-3)", fontSize: 9 }}>{pivotRowMins[ri].toFixed(1)}</td>
+                  <td style={{ color: "var(--ink-3)", fontSize: 9 }}>{pivotRowMaxes[ri].toFixed(1)}</td>
+                  <td style={{
+                    color: pivotRowTrends[ri] === "↑" ? "var(--warn)" : pivotRowTrends[ri] === "↓" ? "var(--ok)" : "var(--ink-3)",
+                    fontSize: 13, textAlign: "center",
+                  }}>
+                    {pivotRowTrends[ri]}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+
+        {/* Row note */}
+        {pivotCard.note && (
+          <div style={{ padding: "10px 20px", borderTop: "1px solid var(--hair)", fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", fontStyle: "italic" }}>
+            Agent: {pivotCard.note}
+          </div>
+        )}
       </div>
 
       {/* ── Insight feed ─────────────────────────────────────────────────── */}

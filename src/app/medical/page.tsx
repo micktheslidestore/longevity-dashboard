@@ -4,6 +4,144 @@ import { useState } from "react"
 import { DATA } from "@/data/james"
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, ReferenceLine, Tooltip } from "recharts"
 
+// ─── Medical Roadmap ─────────────────────────────────────────────────────────
+
+const MILESTONES = [
+  { label: "Today",                    date: "20 Apr",  daysOut: 0,  type: "today",    note: null },
+  { label: "DEXA + VO₂max retest",    date: "22 Apr",  daysOut: 2,  type: "test",     note: "Fasted from 20:30 Tue · West Clinic 08:30" },
+  { label: "Quarterly protocol review",date: "29 Apr",  daysOut: 9,  type: "coaching", note: "In person · 60 min · Darcy O'Sullivan" },
+  { label: "Full quarterly bloods",    date: "06 May",  daysOut: 16, type: "blood",    note: "Phlebotomist visit · fasted" },
+  { label: "Cardiology consult",       date: "12 May",  daysOut: 22, type: "medical",  note: "Dr. Sanjay Rao, MD · video" },
+  { label: "Q3 bloods · ApoB target", date: "02 Jul",  daysOut: 73, type: "target",   note: "ApoB ≤ 70 mg/dL · Fibrinogen < 320 mg/dL" },
+]
+
+const MILESTONE_COLORS: Record<string, string> = {
+  today:    "var(--ink)",
+  test:     "var(--warn)",
+  coaching: "var(--ok)",
+  blood:    "#9B8FA9",
+  medical:  "var(--warn)",
+  target:   "var(--ok)",
+}
+
+function MedicalRoadmap() {
+  const [hovered, setHovered] = useState<number | null>(null)
+  const totalDays = 73 // span to Jul 2
+
+  return (
+    <div className="panel">
+      <div className="panel-head">
+        <span>Medical roadmap · Q2 2026</span>
+        <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+          Next 73 days · key milestones
+        </span>
+      </div>
+
+      {/* Timeline track */}
+      <div style={{ padding: "24px 32px 10px" }}>
+        <div style={{ position: "relative", height: 4, background: "var(--hair-strong)", borderRadius: 2 }}>
+          {/* Progress fill */}
+          <div style={{ position: "absolute", left: 0, top: 0, height: "100%", width: "2.7%", background: "var(--ink)", borderRadius: 2 }} />
+
+          {MILESTONES.map((m, i) => {
+            const pct = (m.daysOut / totalDays) * 100
+            const color = MILESTONE_COLORS[m.type]
+            return (
+              <div
+                key={m.label}
+                onMouseEnter={() => setHovered(i)}
+                onMouseLeave={() => setHovered(null)}
+                style={{ position: "absolute", left: `${pct}%`, top: "50%", transform: "translate(-50%, -50%)", cursor: "default" }}
+              >
+                <div style={{
+                  width: m.type === "today" ? 10 : 12,
+                  height: m.type === "today" ? 10 : 12,
+                  borderRadius: m.type === "target" ? 0 : "50%",
+                  background: m.type === "today" ? "var(--ink)" : "var(--bg)",
+                  border: `2px solid ${color}`,
+                  transform: m.type === "target" ? "rotate(45deg)" : undefined,
+                }} />
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Labels row */}
+        <div style={{ position: "relative", height: 52, marginTop: 6 }}>
+          {MILESTONES.map((m, i) => {
+            const pct = (m.daysOut / totalDays) * 100
+            const color = MILESTONE_COLORS[m.type]
+            const isHovered = hovered === i
+            return (
+              <div
+                key={m.label}
+                onMouseEnter={() => setHovered(i)}
+                onMouseLeave={() => setHovered(null)}
+                style={{
+                  position: "absolute",
+                  left: `${pct}%`,
+                  transform: "translateX(-50%)",
+                  display: "flex", flexDirection: "column", alignItems: "center",
+                  width: 90,
+                }}
+              >
+                <div style={{ fontFamily: "var(--mono)", fontSize: 8, color: isHovered ? color : "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.06em", textAlign: "center", lineHeight: 1.3 }}>
+                  {m.date}
+                </div>
+                <div style={{ fontFamily: "var(--mono)", fontSize: 7.5, color: isHovered ? "var(--ink)" : "var(--ink-4)", textAlign: "center", lineHeight: 1.3, marginTop: 2 }}>
+                  {m.label}
+                </div>
+                {isHovered && m.note && (
+                  <div style={{
+                    position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)",
+                    marginTop: 6, background: "var(--panel-2)", border: `1px solid ${color}`,
+                    padding: "6px 10px", fontFamily: "var(--mono)", fontSize: 8.5, color: "var(--ink-2)",
+                    whiteSpace: "nowrap", zIndex: 10, lineHeight: 1.4,
+                  }}>
+                    {m.note}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Target progress rails */}
+      <div style={{ borderTop: "1px solid var(--hair)", padding: "16px 24px", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 0 }}>
+        {DATA.vision.tracks.map((track, i) => {
+          const pct = Math.round(track.progress * 100)
+          const isDown = track.dir === "down"
+          const color = pct >= 60 ? "var(--ok)" : pct >= 30 ? "var(--warn)" : "var(--alert)"
+          return (
+            <div key={track.name} style={{ padding: "10px 16px", borderRight: i < 3 ? "1px solid var(--hair)" : undefined }}>
+              <div style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-3)", marginBottom: 6 }}>
+                {track.name}
+              </div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
+                <span style={{ fontFamily: "var(--mono)", fontSize: 18, color: "var(--ink)", letterSpacing: "-0.02em" }}>
+                  {track.now}
+                </span>
+                <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)" }}>{track.unit}</span>
+                <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-4)" }}>
+                  {isDown ? "↓" : "↑"} {track.target}
+                </span>
+              </div>
+              {/* Progress rail */}
+              <div style={{ height: 3, background: "var(--hair-strong)", borderRadius: 1, marginBottom: 4 }}>
+                <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: 1 }} />
+              </div>
+              <div style={{ fontFamily: "var(--mono)", fontSize: 8, color }}>
+                {pct}% to target
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function FlagDot({ flag }: { flag: string | null }) {
   if (!flag) return null
   return (
@@ -118,6 +256,9 @@ export default function MedicalPage() {
           )}
         </div>
       </div>
+
+      {/* Medical roadmap */}
+      <MedicalRoadmap />
 
       {/* Risk strip */}
       <div style={{ display: "flex", gap: 0, borderTop: 0 }}>
