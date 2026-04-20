@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { DATA } from "@/data/james"
 
 const { command } = DATA
@@ -28,7 +29,29 @@ const QUARTER_HISTORY = [
   },
 ]
 
-// ─── Agent knowledge base ─────────────────────────────────────────────────────
+// ─── Modal ────────────────────────────────────────────────────────────────────
+
+function Modal({ title, body, onClose, onConfirm, confirmLabel }: {
+  title: string; body: React.ReactNode; onClose: () => void
+  onConfirm: () => void; confirmLabel: string
+}) {
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200 }}
+      onClick={onClose}>
+      <div style={{ background: "var(--bg)", border: "1px solid var(--hair-strong)", padding: "28px 32px", maxWidth: 520, width: "90%", boxShadow: "0 8px 40px rgba(0,0,0,0.5)" }}
+        onClick={e => e.stopPropagation()}>
+        <div style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.14em", color: "var(--ok)", marginBottom: 10 }}>{title}</div>
+        <div style={{ fontSize: 13, color: "var(--ink-2)", lineHeight: 1.65, marginBottom: 24 }}>{body}</div>
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+          <button onClick={onClose} style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", border: "1px solid var(--hair-strong)", padding: "7px 16px", color: "var(--ink-3)", background: "transparent", cursor: "pointer" }}>Cancel</button>
+          <button onClick={onConfirm} style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", border: "none", background: "var(--ok)", color: "var(--bg)", padding: "7px 18px", cursor: "pointer" }}>{confirmLabel}</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Agent panel ──────────────────────────────────────────────────────────────
 
 interface Msg { role: "agent" | "coach"; text: string; time: string }
 
@@ -40,8 +63,9 @@ const QUICK_ACTIONS = [
   "Quarterly report summary",
 ]
 
-function matchResponse(input: string): string {
+function matchResponse(input: string, router: ReturnType<typeof useRouter>): string {
   const q = input.toLowerCase()
+
   if (/brief|morning|today|daily/.test(q))
     return `Morning briefing for Jamie Garis · ${DATA.user.today}\n\nAllostatic Load: 64 (elevated band). Three consecutive nights of incomplete recovery — RHR +4 bpm above 30-day baseline, HRV at 41 ms (−11 vs baseline). Skin temp deviation +0.4°C sustained over 3 nights.\n\nBoard call today at 09:00 — anticipatory stress likely active.\n\nPriority actions: (1) Confirm hold-intensity corrector with Jamie. (2) Schedule 8-min breathing sequence before 14:45 coaching call. (3) Protect sleep onset — no screens after 21:30.\n\nNo dietary changes required. Continue omega-3, berberine, rotating sleep-aid protocol.`
 
@@ -49,21 +73,32 @@ function matchResponse(input: string): string {
     return `ApoB trajectory for Jamie Garis:\n\nCurrent: 84 mg/dL · Q3 target: ≤70 mg/dL · 73 days remaining.\n\nQuarterly progression: 108 → 99 → 91 → 84. Consistent −7 mg/dL per quarter when fibre adherence exceeds 89%. At this rate: projected 77 mg/dL by Q3 — still 7 above target.\n\nTo hit ≤70: fibre adherence must reach 94%+, or we need to consider a statin dose adjustment (discuss with Dr. Rao at May 12 consult).\n\nThe cardio protocol (zone-2) correlates r=+0.12 with ApoB delta — fibre is the primary lever (r=+0.74).`
 
   if (/protocol|zone|train|intensity|hold/.test(q))
-    return `Current protocol for Jamie Garis (Q2 2026):\n\n● Zone-2: ≥160 min/week (adjusted from 180 for board-cycle weeks)\n● No caffeine post-14:00 (in place since 22 Mar — confirmed effective)\n● Omega-3: 3g/day · psyllium husk daily · legume logging active\n● CGM SD target: <14 mg/dL\n\nActive corrector (17 Apr): Hold-intensity — convert all sessions to zone-2 until HRV stabilises above 44 ms for 2 consecutive nights.\n\nJamie has not logged a session since the hold was issued. Recommend checking in.`
+    return `Current protocol for Jamie Garis (Q2 2026):\n\n● Zone-2: ≥160 min/week (adjusted from 180 for board-cycle weeks)\n● No caffeine post-14:00 (in place since 22 Mar — confirmed effective)\n● Omega-3: 3g/day · psyllium husk daily · legume logging active\n● CGM SD target: <14 mg/dL\n\nActive corrector (17 Apr): Hold-intensity — convert all sessions to zone-2 until HRV stabilises above 44 ms for 2 consecutive nights.\n\nJamie has not logged a session since the hold was issued. Recommend checking in.\n\nView full trends → /coach/trends`
 
   if (/draft|suggest|recommend|direct/.test(q))
     return `Proposed directive for Jamie Garis:\n\n"Extend the intensity hold through Saturday 26 Apr. HRV currently 41 ms — we need 2 consecutive nights above 44 ms before resuming zone-2. This keeps you on track for the DEXA VO₂max retest Wednesday.\n\nAction: Zone-2 only (HR <135 bpm) or full rest until Saturday morning review. Log your Sunday morning HRV in check-in."\n\nShall I format this as a signed directive and push to Jamie's dashboard?`
 
   if (/sleep|recovery|hrv|autonomic|flag/.test(q))
-    return `Autonomic flag analysis · Jamie Garis:\n\nHRV: 41 ms (−11 vs 30-day baseline of 52 ms). RHR: 52 bpm (+4 vs baseline). Skin temp: +0.4°C sustained for 3 nights.\n\nPattern match: This signature is nearly identical to the February 06–11 setback. That event took 8 days to resolve after load reduction. We're on day 3 of the current flag.\n\nRisk: If we don't hold intensity now, recovery extends by an estimated 4–6 days based on historical pattern. Board call today adds cortisol load.\n\nRecommendation: Maintain hold through at least Wednesday. Re-evaluate after DEXA.`
+    return `Autonomic flag analysis · Jamie Garis:\n\nHRV: 41 ms (−11 vs 30-day baseline of 52 ms). RHR: 52 bpm (+4 vs baseline). Skin temp: +0.4°C sustained for 3 nights.\n\nPattern match: This signature is nearly identical to the February 06–11 setback. That event took 8 days to resolve after load reduction. We're on day 3 of the current flag.\n\nRisk: If we don't hold intensity now, recovery extends by an estimated 4–6 days based on historical pattern. Board call today adds cortisol load.\n\nRecommendation: Maintain hold through at least Wednesday. Re-evaluate after DEXA.\n\nView HRV trends in detail → /coach/trends`
 
   if (/report|quarter|q1|q2|summary/.test(q))
     return `Quarterly summary — Q1 2026 (closed 31 Mar):\n\nOutcomes: ApoB 91 → 84 mg/dL ✓ · Deep sleep +20 min avg after caffeine protocol ✓ · Fibrinogen rising (318 → 342) — watch list.\n\nMissed: HRV floor target (48 ms) — current 41 ms reflects board-cycle vulnerability. Zone-2 volume averaged 148 min/week vs 180 target.\n\nQ2 adjustments: Zone-2 target reduced to 160 min/week (realistic for board-cycle schedule). Added fibrinogen to watch list. Pre-quarter taper protocol to be formalised before July.\n\nFull Q1 report available as PDF export.`
 
-  return `I've analysed Jamie's latest data. Here's what I see:\n\nAllostatic Load: 64 (elevated). Primary flags: autonomic (HRV −11 ms, day 3 of deficit) and sleep quality (efficiency 82%, deep sleep 54 min). Board-cycle stress is the current context — cortisol AM was 18.4 µg/dL at last draw.\n\nNext recommended actions: (1) Confirm today's hold-intensity corrector. (2) Review 3 pending agent drafts. (3) Prepare DEXA retest briefing for Wed 22 Apr.\n\nAsk me about ApoB, protocol changes, the autonomic flag, or the quarterly report.`
+  if (/trend|chart|graph|data/.test(q)) {
+    setTimeout(() => router.push("/coach/trends"), 1200)
+    return `Opening Trends for Jamie Garis…\n\nNavigating to the trends view now. You'll see the 30-day series for HRV, RHR, sleep, glucose, and Allostatic Load with protocol annotation markers and multi-metric overlay.`
+  }
+
+  if (/medical|dexa|lab|blood|doctor/.test(q)) {
+    setTimeout(() => router.push("/coach/medical"), 1200)
+    return `Opening Medical Roadmap…\n\nKey upcoming dates: DEXA + VO₂max retest 22 Apr (2 days), Quarterly bloods 6 May (16 days), Cardiology consult 12 May (22 days).\n\nJamie must fast from 20:30 Tuesday for the DEXA. I'll navigate you there now.`
+  }
+
+  return `I've analysed Jamie's latest data. Here's what I see:\n\nAllostatic Load: 64 (elevated). Primary flags: autonomic (HRV −11 ms, day 3 of deficit) and sleep quality (efficiency 82%, deep sleep 54 min). Board-cycle stress is the current context.\n\nNext recommended actions: (1) Confirm today's hold-intensity corrector. (2) Review 3 pending agent drafts. (3) Prepare DEXA retest briefing for Wed 22 Apr.\n\nAsk me about ApoB, protocol changes, the autonomic flag, trends, medical roadmap, or the quarterly report.`
 }
 
 function AgentPanel() {
+  const router = useRouter()
   const now = "07:14"
   const [messages, setMessages] = useState<Msg[]>([
     { role: "agent", time: "06:58", text: `Good morning, Darcy. I've completed Jamie's overnight analysis.\n\nAllostatic Load: 64 (elevated — same band as yesterday). HRV held at 41 ms overnight, no further decline. Skin temp deviation stable at +0.4°C.\n\nYou have 3 drafts awaiting countersignature and a board call on Jamie's calendar at 09:00. The hold-intensity corrector from 17 Apr remains active.\n\nWhat would you like to address first?` },
@@ -81,7 +116,7 @@ function AgentPanel() {
     setInput("")
     setLoading(true)
     setTimeout(() => {
-      setMessages(p => [...p, { role: "agent", text: matchResponse(text), time: now }])
+      setMessages(p => [...p, { role: "agent", text: matchResponse(text, router), time: now }])
       setLoading(false)
     }, 700)
   }
@@ -89,21 +124,24 @@ function AgentPanel() {
   return (
     <div id="agent" className="panel">
       <div className="panel-head">
-        <span>Agent</span>
-        <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ok)", textTransform: "uppercase", letterSpacing: "0.08em" }}>⬤ Live · pre-loaded context</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span>Agent</span>
+          <span style={{ fontFamily: "var(--mono)", fontSize: 8, color: "var(--ok)", textTransform: "uppercase", letterSpacing: "0.08em", border: "1px solid color-mix(in srgb, var(--ok) 40%, transparent)", padding: "2px 7px" }}>⬤ Live · pre-loaded context</span>
+        </div>
+        <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)" }}>Ask about Jamie's data, draft directives, navigate to sections</span>
       </div>
 
       {/* Quick actions */}
       <div style={{ padding: "10px 20px", borderBottom: "1px solid var(--hair)", display: "flex", gap: 8, flexWrap: "wrap" }}>
         {QUICK_ACTIONS.map(qa => (
-          <button key={qa} onClick={() => send(qa)} style={{ fontFamily: "var(--mono)", fontSize: 9, letterSpacing: "0.06em", padding: "4px 10px", border: "1px solid var(--hair-strong)", color: "var(--ink-3)", background: "transparent", cursor: "pointer", textTransform: "uppercase" }}>
+          <button key={qa} onClick={() => send(qa)} style={{ fontFamily: "var(--mono)", fontSize: 9, letterSpacing: "0.06em", padding: "5px 12px", border: "1px solid var(--hair-strong)", color: "var(--ink-3)", background: "transparent", cursor: "pointer", textTransform: "uppercase" }}>
             {qa}
           </button>
         ))}
       </div>
 
       {/* Messages */}
-      <div style={{ height: 340, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
+      <div style={{ height: 320, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
         {messages.map((m, i) => (
           <div key={i} style={{ display: "flex", flexDirection: m.role === "coach" ? "row-reverse" : "row", gap: 10, alignItems: "flex-start" }}>
             <div style={{ width: 26, height: 26, borderRadius: "50%", background: m.role === "agent" ? "var(--panel-2)" : "var(--ok)", border: `1px solid ${m.role === "agent" ? "var(--hair-strong)" : "var(--ok)"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "var(--mono)", fontSize: 8, color: m.role === "agent" ? "var(--ok)" : "var(--bg)", textTransform: "uppercase" }}>
@@ -132,7 +170,7 @@ function AgentPanel() {
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === "Enter" && send(input)}
-          placeholder="Ask about Jamie's data, draft a directive, request a report…"
+          placeholder="Ask about Jamie's data, draft a directive, navigate to a section…"
           style={{ flex: 1, background: "var(--panel-2)", border: "1px solid var(--hair-strong)", padding: "9px 12px", fontFamily: "var(--mono)", fontSize: 11, color: "var(--ink)", letterSpacing: "0.02em" }}
         />
         <button onClick={() => send(input)} style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.1em", border: "none", background: "var(--ok)", color: "var(--bg)", padding: "9px 18px", cursor: "pointer" }}>
@@ -143,10 +181,12 @@ function AgentPanel() {
   )
 }
 
-// ─── Workflow command (unified: cycle + next actions + pipeline) ───────────────
+// ─── Workflow / Today ─────────────────────────────────────────────────────────
 
 function WorkflowCommand() {
+  const router = useRouter()
   const [actionsDone, setActionsDone] = useState<string[]>([])
+  const [expandedAction, setExpandedAction] = useState<string | null>(null)
   const pendingDrafts = DATA.team.inbox.filter(x => x.status === "pending").length
   const activeCorrectors = DATA.courseCorrector.filter(c => c.status === "active")
 
@@ -157,130 +197,170 @@ function WorkflowCommand() {
       label: "DEXA + VO₂max retest",
       sub: "Wed 22 Apr · 2 days · West Clinic 08:30",
       cta: "Confirm fasting protocol",
+      link: { label: "Medical roadmap →", href: "/coach/medical" },
       color: "var(--warn)",
-      detail: "Jamie must fast from 20:30 Tue. Confirm he has this in his calendar and the protocol is clear.",
+      detail: "Jamie must fast from 20:30 Tue. Confirm he has the fasting protocol in his calendar and that the clinic has his prep sheet.",
     },
     {
       id: "drafts",
       urgency: "high",
-      label: `${pendingDrafts} agent drafts awaiting countersignature`,
+      label: `${pendingDrafts} drafts awaiting your countersignature`,
       sub: "Autonomic flag · glucose excursion · ApoB analysis",
-      cta: "Review & countersign",
+      cta: "Review drafts",
+      link: { label: "Trends →", href: "/coach/trends" },
       color: "var(--warn)",
-      detail: "3 drafts: hold-intensity corrector, caffeine-sleep insight, overnight glucose flag. All await your review before reaching Jamie.",
+      detail: "3 drafts ready: hold-intensity corrector, caffeine-sleep insight, overnight glucose flag. All need your review before they reach Jamie.",
     },
     {
       id: "corrector",
       urgency: "active",
       label: activeCorrectors[0]?.recommendation ?? "Hold-intensity corrector active",
-      sub: "Issued 17 Apr · day 3 · monitoring HRV",
+      sub: "Issued 17 Apr · day 3 · monitoring HRV recovery",
       cta: "Check overnight data",
+      link: { label: "Compliance →", href: "/coach/compliance" },
       color: "var(--accent)",
-      detail: "HRV stable at 41 ms — no further decline overnight. RHR still +4 bpm. Maintain hold through Wednesday, reassess post-DEXA.",
+      detail: "HRV stable at 41 ms — no further decline overnight. RHR still +4 bpm. Maintain hold through Wednesday, reassess post-DEXA retest.",
     },
     {
       id: "review",
       urgency: "upcoming",
       label: "Quarterly protocol review",
-      sub: "Wed 29 Apr · 9 days · in person · 60 min",
+      sub: "Tue 29 Apr · 9 days · in person · 60 min",
       cta: "Prepare agenda",
+      link: { label: "Medical →", href: "/coach/medical" },
       color: "var(--ok)",
-      detail: "Topics: DEXA/VO₂max results, Q2 ApoB trajectory, fibrinogen watch, pre-quarter taper protocol, July board-cycle plan.",
+      detail: "Topics: DEXA/VO₂max results, Q2 ApoB trajectory, fibrinogen watch, pre-quarter taper protocol, July board-cycle load plan.",
     },
   ]
 
   const phases = command.cyclephase.phases
-  const current = command.cyclephase.current
+  const upcomingIndex = phases.findIndex(p => p.upcoming)
+  const nextAfterUpcoming = upcomingIndex >= 0 && upcomingIndex < phases.length - 1 ? phases[upcomingIndex + 1] : null
 
-  const PIPELINE = [
-    { label: "Devices synced",   status: "ok",  note: "06:41 · 3 sources" },
-    { label: "Agent analysis",   status: "ok",  note: "Completed 06:58" },
-    { label: "Drafts queued",    status: "warn", note: "3 awaiting review" },
-    { label: "Jamie dashboard",  status: "ok",  note: "Up to date" },
+  const SYSTEM_STATUS = [
+    { label: "Wearables synced",  status: "ok",   note: "06:41 · Whoop + Oura" },
+    { label: "Agent analysis",    status: "ok",   note: "Completed 06:58" },
+    { label: "Drafts queued",     status: "warn", note: "3 awaiting review" },
+    { label: "Jamie dashboard",   status: "ok",   note: "Up to date" },
   ]
 
   return (
     <div className="panel">
       <div className="panel-head">
-        <span>Workflow command</span>
+        <div>
+          <span style={{ fontSize: 13, color: "var(--ink)" }}>Today</span>
+          <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", marginLeft: 10 }}>{DATA.user.today}</span>
+        </div>
         <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-          Q2 2026 · Week 3 of 13 · {DATA.user.today}
+          Q2 2026 · Week 3 of 13
         </span>
       </div>
 
-      {/* Next required actions — the main CTA block */}
+      {/* Next required actions */}
       <div style={{ padding: "18px 22px", borderBottom: "1px solid var(--hair)" }}>
         <div style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.14em", color: "var(--ink-4)", marginBottom: 14 }}>
-          Next required actions
+          What needs to happen today
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {NEXT_ACTIONS.map(action => {
             const done = actionsDone.includes(action.id)
+            const isExpanded = expandedAction === action.id
             return (
-              <div key={action.id} style={{ display: "flex", alignItems: "stretch", gap: 0, border: `1px solid ${done ? "var(--hair)" : action.color === "var(--warn)" ? "color-mix(in srgb, var(--warn) 30%, transparent)" : "var(--hair)"}`, background: done ? "transparent" : action.urgency === "critical" ? "color-mix(in srgb, var(--warn) 5%, transparent)" : "transparent" }}>
-                {/* Urgency stripe */}
-                <div style={{ width: 3, background: done ? "var(--hair)" : action.color, flexShrink: 0 }} />
-                <div style={{ flex: 1, padding: "12px 16px", display: "flex", alignItems: "center", gap: 16 }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: "var(--mono)", fontSize: 11, color: done ? "var(--ink-3)" : "var(--ink)", marginBottom: 2, textDecoration: done ? "line-through" : "none" }}>{action.label}</div>
-                    <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-4)" }}>{action.sub}</div>
+              <div key={action.id} style={{ border: `1px solid ${done ? "var(--hair)" : action.color === "var(--warn)" ? "color-mix(in srgb, var(--warn) 30%, transparent)" : "var(--hair)"}`, background: done ? "transparent" : action.urgency === "critical" ? "color-mix(in srgb, var(--warn) 4%, transparent)" : "transparent" }}>
+                <div style={{ display: "flex", alignItems: "stretch", gap: 0 }}>
+                  <div style={{ width: 3, background: done ? "var(--hair)" : action.color, flexShrink: 0 }} />
+                  <div style={{ flex: 1, padding: "11px 16px", display: "flex", alignItems: "center", gap: 14 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: "var(--mono)", fontSize: 11, color: done ? "var(--ink-3)" : "var(--ink)", marginBottom: 1, textDecoration: done ? "line-through" : "none" }}>{action.label}</div>
+                      <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-4)" }}>{action.sub}</div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                      {/* Deep link */}
+                      <button onClick={() => router.push(action.link.href)} style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-3)", background: "transparent", border: "none", cursor: "pointer", padding: "4px 0" }}>
+                        {action.link.label}
+                      </button>
+                      {/* Expand detail */}
+                      <button onClick={() => setExpandedAction(isExpanded ? null : action.id)} style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-4)", background: "transparent", border: "none", cursor: "pointer", padding: "4px" }}>
+                        {isExpanded ? "▲" : "▼"}
+                      </button>
+                      {!done ? (
+                        <button
+                          onClick={() => setActionsDone(p => [...p, action.id])}
+                          style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", border: `1px solid ${action.color}`, color: action.color, padding: "5px 12px", background: "transparent", cursor: "pointer" }}
+                        >
+                          {action.cta}
+                        </button>
+                      ) : (
+                        <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ok)", textTransform: "uppercase", letterSpacing: "0.08em" }}>✓ Done</span>
+                      )}
+                    </div>
                   </div>
-                  {!done ? (
-                    <button
-                      onClick={() => setActionsDone(p => [...p, action.id])}
-                      style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", border: `1px solid ${action.color}`, color: action.color, padding: "5px 14px", background: "transparent", cursor: "pointer", flexShrink: 0 }}
-                    >
-                      {action.cta}
-                    </button>
-                  ) : (
-                    <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ok)", textTransform: "uppercase", letterSpacing: "0.08em", flexShrink: 0 }}>✓ Done</span>
-                  )}
                 </div>
+                {isExpanded && (
+                  <div style={{ padding: "10px 16px 12px 19px", borderTop: "1px solid var(--hair)", fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.6 }}>
+                    {action.detail}
+                  </div>
+                )}
               </div>
             )
           })}
         </div>
       </div>
 
-      {/* Cycle position (mini) + pipeline status */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderTop: 0 }}>
+      {/* Cycle position + system status */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
 
-        {/* Cycle mini */}
-        <div style={{ padding: "14px 22px", borderRight: "1px solid var(--hair)" }}>
-          <div style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-4)", marginBottom: 12 }}>Quarterly cycle</div>
-          <div style={{ display: "flex", gap: 0, alignItems: "center" }}>
+        {/* Where you are in the cycle */}
+        <div style={{ padding: "16px 22px", borderRight: "1px solid var(--hair)" }}>
+          <div style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-4)", marginBottom: 14 }}>
+            Where you are · Q2 2026
+          </div>
+
+          {/* Phase track */}
+          <div style={{ display: "flex", gap: 0, alignItems: "flex-start", marginBottom: 12 }}>
             {phases.map((ph, i) => {
               const color = ph.done ? "var(--ok)" : ph.upcoming ? "var(--warn)" : "var(--hair-strong)"
               return (
-                <div key={ph.label} style={{ display: "flex", alignItems: "center", flex: 1 }}>
+                <div key={ph.label} style={{ display: "flex", alignItems: "flex-start", flex: 1 }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1 }}>
-                    <div style={{ width: 14, height: 14, borderRadius: "50%", background: ph.done ? "var(--ok)" : "var(--bg)", border: `2px solid ${color}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 5 }}>
+                    <div style={{ width: 16, height: 16, borderRadius: "50%", background: ph.done ? "var(--ok)" : "var(--bg)", border: `2px solid ${color}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 4 }}>
                       {ph.done && <span style={{ color: "var(--bg)", fontSize: 7 }}>✓</span>}
-                      {ph.upcoming && !ph.done && <span style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--warn)", display: "block" }} />}
+                      {ph.upcoming && !ph.done && <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--warn)", display: "block" }} />}
                     </div>
-                    <div style={{ fontFamily: "var(--mono)", fontSize: 7.5, textTransform: "uppercase", letterSpacing: "0.06em", color: ph.upcoming ? "var(--warn)" : ph.done ? "var(--ok)" : "var(--ink-4)", textAlign: "center", lineHeight: 1.3 }}>
-                      {ph.label.split(" ")[0]}
+                    {ph.upcoming && (
+                      <div style={{ fontFamily: "var(--mono)", fontSize: 7, color: "var(--warn)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 1 }}>▲ now</div>
+                    )}
+                    <div style={{ fontFamily: "var(--mono)", fontSize: 7, textTransform: "uppercase", letterSpacing: "0.04em", color: ph.upcoming ? "var(--warn)" : ph.done ? "var(--ok)" : "var(--ink-4)", textAlign: "center", lineHeight: 1.3 }}>
+                      {ph.label.split(" ").slice(0, 2).join(" ")}
                     </div>
                     <div style={{ fontFamily: "var(--mono)", fontSize: 7, color: "var(--ink-4)", textAlign: "center" }}>{ph.date.slice(0, 6)}</div>
                   </div>
-                  {i < phases.length - 1 && <div style={{ height: 1, flex: "0 0 8px", background: "var(--hair-strong)" }} />}
+                  {i < phases.length - 1 && <div style={{ height: 1, flex: "0 0 6px", background: "var(--hair-strong)", marginTop: 8 }} />}
                 </div>
               )
             })}
           </div>
+
+          {/* Next step callout */}
+          {nextAfterUpcoming && (
+            <div style={{ borderLeft: "2px solid var(--hair-strong)", paddingLeft: 10 }}>
+              <div style={{ fontFamily: "var(--mono)", fontSize: 7.5, color: "var(--ink-4)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Next milestone after remeasurement</div>
+              <div style={{ fontFamily: "var(--mono)", fontSize: 9.5, color: "var(--ink-2)" }}>{nextAfterUpcoming.label} · {nextAfterUpcoming.date}</div>
+            </div>
+          )}
         </div>
 
-        {/* Pipeline status */}
-        <div style={{ padding: "14px 22px" }}>
-          <div style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-4)", marginBottom: 12 }}>Data pipeline</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {PIPELINE.map((p, i) => (
-              <div key={p.label} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: p.status === "ok" ? "var(--ok)" : "var(--warn)" }}>
-                  {p.status === "ok" ? "⬤" : "◉"}
+        {/* System status (was "Data pipeline") */}
+        <div style={{ padding: "16px 22px" }}>
+          <div style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-4)", marginBottom: 12 }}>System status</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+            {SYSTEM_STATUS.map(item => (
+              <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontFamily: "var(--mono)", fontSize: 8, color: item.status === "ok" ? "var(--ok)" : "var(--warn)" }}>
+                  {item.status === "ok" ? "⬤" : "◉"}
                 </span>
-                <span style={{ fontFamily: "var(--mono)", fontSize: 9.5, color: "var(--ink-2)", flex: 1 }}>{p.label}</span>
-                <span style={{ fontFamily: "var(--mono)", fontSize: 8.5, color: "var(--ink-4)" }}>{p.note}</span>
+                <span style={{ fontFamily: "var(--mono)", fontSize: 9.5, color: "var(--ink-2)", flex: 1 }}>{item.label}</span>
+                <span style={{ fontFamily: "var(--mono)", fontSize: 8.5, color: "var(--ink-4)" }}>{item.note}</span>
               </div>
             ))}
           </div>
@@ -291,8 +371,6 @@ function WorkflowCommand() {
 }
 
 // ─── JTBD with action outputs ─────────────────────────────────────────────────
-
-type JTBDAction = "generate" | "publish" | "review" | "push"
 
 interface ToastMsg { id: number; text: string }
 
@@ -336,7 +414,7 @@ function JTBDWithActions() {
     const done = items.filter(i => checked[i.id]).length
     return (
       <div style={{ padding: "14px 18px", borderTop: "1px solid var(--hair)" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
           <div style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.1em", color }}>{title}</div>
           <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)" }}>{done}/{items.length}</div>
         </div>
@@ -367,18 +445,18 @@ function JTBDWithActions() {
   return (
     <div className="panel" style={{ position: "relative" }}>
       <div className="panel-head">
-        <span>Jobs-to-be-done</span>
-        <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Actions generate outputs · push to dashboard · feed protocol</span>
+        <span>Programme checklist</span>
+        <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Action buttons push to dashboard or generate outputs</span>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
         <div style={{ borderRight: "1px solid var(--hair)" }}>
-          {renderBucket("Coach · Programme", command.jtbd.coachProgramme, "var(--ok)")}
-          {renderBucket("Coach · Daily", command.jtbd.coachDaily, "var(--ok)")}
+          {renderBucket("Your tasks · Programme", command.jtbd.coachProgramme, "var(--ok)")}
+          {renderBucket("Your tasks · Today", command.jtbd.coachDaily, "var(--ok)")}
         </div>
         <div>
-          {renderBucket("Jamie · Programme", command.jtbd.clientProgramme, "var(--accent)")}
-          {renderBucket("Jamie · Daily", command.jtbd.clientDaily, "var(--accent)")}
+          {renderBucket("Jamie · Programme goals", command.jtbd.clientProgramme, "var(--accent)")}
+          {renderBucket("Jamie · Daily habits", command.jtbd.clientDaily, "var(--accent)")}
         </div>
       </div>
 
@@ -402,12 +480,11 @@ function QuarterlyHistory() {
     <div className="panel">
       <div className="panel-head">
         <span>Quarterly history</span>
-        <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Post-quarter reports · growing timeline</span>
+        <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>End-of-quarter reports · growing timeline</span>
       </div>
       {QUARTER_HISTORY.map((q, i) => (
         <div key={q.id} style={{ borderTop: i > 0 ? "1px solid var(--hair)" : undefined }}>
           <div onClick={() => setOpen(open === q.id ? null : q.id)} style={{ padding: "14px 22px", display: "flex", alignItems: "center", gap: 16, cursor: "pointer" }}>
-            {/* Status node */}
             <div style={{ width: 10, height: 10, borderRadius: "50%", background: q.status === "active" ? "var(--ok)" : q.status === "closed" ? "var(--ink-3)" : "var(--hair-strong)", flexShrink: 0 }} />
             <div style={{ flex: 1 }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 2 }}>
@@ -443,6 +520,11 @@ function QuarterlyHistory() {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function CoachCommandPage() {
+  const [showExportModal, setShowExportModal] = useState(false)
+  const [showReportModal, setShowReportModal] = useState(false)
+  const [exportDone, setExportDone] = useState(false)
+  const [reportDone, setReportDone] = useState(false)
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: "24px 32px", maxWidth: 1300 }}>
 
@@ -455,20 +537,71 @@ export default function CoachCommandPage() {
             Jamie Garis · Q2 2026 programme
           </h1>
           <div style={{ display: "flex", gap: 10 }}>
-            <button style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", border: "1px solid var(--hair-strong)", padding: "6px 14px", color: "var(--ink-2)", background: "transparent", cursor: "pointer" }}>
-              Export PDF
+            <button
+              onClick={() => setShowExportModal(true)}
+              style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", border: "1px solid var(--hair-strong)", padding: "6px 14px", color: exportDone ? "var(--ok)" : "var(--ink-2)", background: "transparent", cursor: "pointer" }}>
+              {exportDone ? "✓ Exported" : "Export PDF"}
             </button>
-            <button style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", border: "1px solid var(--ink)", padding: "6px 14px", background: "var(--ink)", color: "var(--bg)", cursor: "pointer" }}>
-              Generate quarterly report
+            <button
+              onClick={() => setShowReportModal(true)}
+              style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", border: "1px solid var(--ink)", padding: "6px 14px", background: "var(--ink)", color: "var(--bg)", cursor: "pointer" }}>
+              {reportDone ? "✓ Report queued" : "Generate quarterly report"}
             </button>
           </div>
         </div>
       </div>
 
-      <WorkflowCommand />
+      {/* Agent is first — the primary interface */}
       <AgentPanel />
+      <WorkflowCommand />
       <JTBDWithActions />
       <QuarterlyHistory />
+
+      {/* Export PDF modal */}
+      {showExportModal && (
+        <Modal
+          title="Export PDF · Jamie Garis Q2 2026"
+          body={
+            <div>
+              <p style={{ margin: "0 0 12px" }}>This will generate a PDF snapshot containing:</p>
+              <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 2 }}>
+                <li>Current Allostatic Load score and domain breakdown</li>
+                <li>Active protocol and correctors</li>
+                <li>30-day trend summary (HRV, ApoB trajectory)</li>
+                <li>Q2 strategy doc (all sections)</li>
+                <li>Upcoming milestones and test dates</li>
+              </ul>
+              <p style={{ margin: "12px 0 0", fontSize: 11, color: "var(--ink-4)" }}>Suitable for sharing with referring physicians or for your own records.</p>
+            </div>
+          }
+          confirmLabel="Generate PDF"
+          onClose={() => setShowExportModal(false)}
+          onConfirm={() => { setExportDone(true); setShowExportModal(false) }}
+        />
+      )}
+
+      {/* Generate report modal */}
+      {showReportModal && (
+        <Modal
+          title="Generate quarterly report · Q2 2026"
+          body={
+            <div>
+              <p style={{ margin: "0 0 12px" }}>This snapshots the current Q2 state and queues it as a report. Use this at quarter-close or to share a mid-quarter progress update.</p>
+              <p style={{ margin: "0 0 8px" }}>The report will include:</p>
+              <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 2 }}>
+                <li>Dashboard state at time of generation</li>
+                <li>Quarter-to-date results vs targets</li>
+                <li>Agent analysis summary</li>
+                <li>Resolved and active correctors</li>
+                <li>Locked as a permanent link in Quarterly History</li>
+              </ul>
+            </div>
+          }
+          confirmLabel="Confirm and generate"
+          onClose={() => setShowReportModal(false)}
+          onConfirm={() => { setReportDone(true); setShowReportModal(false) }}
+        />
+      )}
 
     </div>
   )

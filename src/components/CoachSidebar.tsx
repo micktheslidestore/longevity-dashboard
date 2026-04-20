@@ -6,17 +6,18 @@ import { useApp } from "./RoleContext"
 import { NavIcon, type IconKey } from "./NavIcons"
 
 const PRIMARY_NAV: { key: string; icon: IconKey; label: string; href: string }[] = [
-  { key: "command",      icon: "command",      label: "Command Centre", href: "/coach/command" },
-  { key: "dashboard",    icon: "dashboard",    label: "Dashboard",      href: "/coach/dashboard" },
-  { key: "compliance",   icon: "compliance",   label: "Compliance",     href: "/coach/compliance" },
-  { key: "trends",       icon: "trends",       label: "Trends",         href: "/coach/trends" },
-  { key: "medical",      icon: "medical",      label: "Medical",        href: "/coach/medical" },
-  { key: "team",         icon: "team",         label: "Team",           href: "/coach/team" },
+  { key: "command",    icon: "command",    label: "Command Centre", href: "/coach/command" },
+  { key: "compliance", icon: "compliance", label: "Compliance",     href: "/coach/compliance" },
+  { key: "calendar",   icon: "dashboard",  label: "Calendar",       href: "/coach/calendar" },
+  { key: "trends",     icon: "trends",     label: "Trends",         href: "/coach/trends" },
+  { key: "medical",    icon: "medical",    label: "Medical",        href: "/coach/medical" },
+  { key: "team",       icon: "team",       label: "Team",           href: "/coach/team" },
+  { key: "dashboard",  icon: "dashboard",  label: "Dashboard",      href: "/coach/dashboard" },
 ]
 
 const TOOL_NAV: { key: string; icon: IconKey; label: string; href: string }[] = [
-  { key: "agent",        icon: "agent",        label: "Agent",          href: "/coach/command#agent" },
-  { key: "architecture", icon: "architecture", label: "Architecture",   href: "/coach/architecture" },
+  { key: "agent",        icon: "agent",        label: "Agent",        href: "/coach/command#agent" },
+  { key: "architecture", icon: "architecture", label: "Architecture", href: "/coach/architecture" },
 ]
 
 export default function CoachSidebar() {
@@ -56,6 +57,17 @@ export default function CoachSidebar() {
     return pathname.startsWith(base)
   }
 
+  function navigate(href: string) {
+    const [path, hash] = href.split("#")
+    router.push(path)
+    if (hash) {
+      // Scroll to the element after navigation settles
+      setTimeout(() => {
+        document.getElementById(hash)?.scrollIntoView({ behavior: "smooth", block: "start" })
+      }, 200)
+    }
+  }
+
   return (
     <div style={s.sidebar}>
       <div style={s.brand}>
@@ -65,7 +77,7 @@ export default function CoachSidebar() {
 
       <nav style={s.nav}>
         {PRIMARY_NAV.map(item => (
-          <button key={item.key} style={s.btn(isActive(item.href))} onClick={() => router.push(item.href.split("#")[0])}>
+          <button key={item.key} style={s.btn(isActive(item.href))} onClick={() => navigate(item.href)}>
             <NavIcon name={item.icon} />
             {item.label}
           </button>
@@ -75,7 +87,7 @@ export default function CoachSidebar() {
         <div style={s.divLabel}>Tools</div>
 
         {TOOL_NAV.map(item => (
-          <button key={item.key} style={s.btn(isActive(item.href))} onClick={() => router.push(item.href.split("#")[0])}>
+          <button key={item.key} style={s.btn(isActive(item.href))} onClick={() => navigate(item.href)}>
             <NavIcon name={item.icon} />
             {item.label}
           </button>

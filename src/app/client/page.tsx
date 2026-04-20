@@ -116,6 +116,22 @@ export default function ClientDashboard() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: "24px 32px", maxWidth: 1300 }}>
+
+      {/* Active corrector alert banner */}
+      {activeCorrectors.length > 0 && (
+        <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 18px", background: "color-mix(in srgb, var(--warn) 6%, transparent)", border: "1px solid color-mix(in srgb, var(--warn) 35%, transparent)", borderLeft: "3px solid var(--warn)" }}>
+          <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--warn)", flexShrink: 0, boxShadow: "0 0 0 3px color-mix(in srgb, var(--warn) 25%, transparent)" }} />
+          <div style={{ flex: 1 }}>
+            <span style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--warn)", marginRight: 10 }}>Active corrector</span>
+            <span style={{ fontFamily: "var(--mono)", fontSize: 10.5, color: "var(--ink)" }}>{activeCorrectors[0].recommendation}</span>
+            <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", marginLeft: 10 }}>Issued {activeCorrectors[0].date} · from {activeCorrectors[0].by}</span>
+          </div>
+          <a href="#correctors" onClick={e => { e.preventDefault(); document.getElementById("correctors")?.scrollIntoView({ behavior: "smooth" }) }} style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--warn)", flexShrink: 0 }}>
+            View details ↓
+          </a>
+        </div>
+      )}
+
       <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: 20, alignItems: "start" }}>
         <ALScorecard alScore={lastDay.alScore} domainScores={lastDay.domainScores} />
         <div className="panel" style={{ padding: "20px 24px" }}>
@@ -146,10 +162,13 @@ export default function ClientDashboard() {
       <WeekCalendar />
 
       {activeCorrectors.length > 0 && (
-        <div className="panel">
+        <div id="correctors" className="panel" style={{ borderTop: "3px solid var(--warn)" }}>
           <div className="panel-head">
-            <span>In-flight correctors</span>
-            <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>{activeCorrectors.length} active</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span>In-flight correctors</span>
+              <span style={{ fontFamily: "var(--mono)", fontSize: 8, color: "var(--warn)", textTransform: "uppercase", letterSpacing: "0.08em", border: "1px solid color-mix(in srgb, var(--warn) 40%, transparent)", padding: "2px 7px" }}>{activeCorrectors.length} active · action required</span>
+            </div>
+            <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Instructions from Darcy</span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: `repeat(${activeCorrectors.length}, 1fr)`, borderLeft: "1px solid var(--hair)" }}>
             {activeCorrectors.map((c, i) => {
@@ -175,7 +194,13 @@ export default function ClientDashboard() {
       )}
 
       <div className="panel">
-        <div className="panel-head"><span>Directives</span></div>
+        <div className="panel-head">
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span>Directives</span>
+            <span style={{ fontFamily: "var(--mono)", fontSize: 8, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.08em", border: "1px solid color-mix(in srgb, var(--accent) 40%, transparent)", padding: "2px 7px" }}>from Darcy</span>
+          </div>
+          <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Your protocol instructions</span>
+        </div>
         <div className="directive-list">
           {DATA.directive.map((d, i) => (
             <div key={i} className="directive-row">
