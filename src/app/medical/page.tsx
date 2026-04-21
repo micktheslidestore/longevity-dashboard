@@ -365,18 +365,217 @@ function LabRail({ points, range, target, unit }: {
   )
 }
 
+const DATA_SOURCES = [
+  {
+    id: "quarterly-bloods",
+    label: "Quarterly bloods",
+    lastUploaded: "2 Apr 2026",
+    nextExpected: "2 Jul 2026",
+    nextUrgent: false,
+  },
+  {
+    id: "dexa",
+    label: "DEXA / body comp",
+    lastUploaded: "12 Jan 2026",
+    nextExpected: "22 Apr 2026",
+    nextUrgent: true,
+  },
+  {
+    id: "vo2max",
+    label: "VO₂max / cardiology",
+    lastUploaded: "12 Jan 2026",
+    nextExpected: "22 Apr 2026",
+    nextUrgent: true,
+  },
+  {
+    id: "cgm",
+    label: "Continuous data (CGM)",
+    lastUploaded: "Today (continuous)",
+    nextExpected: null,
+    nextUrgent: false,
+  },
+]
+
+function UploadModal({ onClose }: { onClose: () => void }) {
+  const [selectedSource, setSelectedSource] = useState<string>("quarterly-bloods")
+  const [dragging, setDragging] = useState(false)
+  const [uploadToast, setUploadToast] = useState(false)
+
+  function handleUpload() {
+    onClose()
+    // parent will show the toast — we emit via a callback-like pattern
+    // but since we need the toast outside the modal, we set it here momentarily
+    setUploadToast(true)
+  }
+
+  // fire external toast via a DOM-level trick: dispatch custom event
+  function handleConfirm() {
+    onClose()
+    window.dispatchEvent(new CustomEvent("lab-upload-toast"))
+  }
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 200,
+        }}
+      />
+      {/* Modal */}
+      <div style={{
+        position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
+        zIndex: 201, background: T.surface, borderRadius: 12,
+        width: 520, maxWidth: "calc(100vw - 48px)",
+        boxShadow: "0 24px 64px rgba(0,0,0,0.6)",
+        overflow: "hidden",
+      }}>
+        {/* Modal header */}
+        <div style={{ padding: "24px 28px 20px", borderBottom: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <h2 style={{ fontFamily: T.serif, fontSize: 22, fontWeight: 300, color: T.ink, margin: 0, letterSpacing: "-0.02em" }}>
+            Upload lab results
+          </h2>
+          <button
+            onClick={onClose}
+            style={{ fontFamily: T.sans, fontSize: 18, color: T.ink3, background: "none", border: "none", cursor: "pointer", lineHeight: 1, padding: "0 0 0 12px" }}
+          >
+            ×
+          </button>
+        </div>
+
+        <div style={{ padding: "24px 28px 28px", display: "flex", flexDirection: "column", gap: 20 }}>
+          {/* Drop zone */}
+          <div
+            onDragOver={e => { e.preventDefault(); setDragging(true) }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={e => { e.preventDefault(); setDragging(false) }}
+            style={{
+              border: `1.5px dashed ${dragging ? T.accent : T.borderMed}`,
+              borderRadius: 10,
+              background: T.surfaceRaised,
+              padding: "28px 24px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 8,
+              transition: "border-color 0.15s",
+            }}
+          >
+            <div style={{ fontFamily: T.sans, fontSize: 13, color: T.ink2 }}>
+              Drag and drop a file here, or
+            </div>
+            <label style={{ cursor: "pointer" }}>
+              <input type="file" accept="application/pdf,image/*" style={{ display: "none" }} />
+              <span style={{
+                fontFamily: T.sans, fontSize: 12, fontWeight: 500,
+                color: T.accent, border: `1px solid ${T.accent}`,
+                padding: "5px 14px", borderRadius: 6, cursor: "pointer",
+              }}>
+                Choose file
+              </span>
+            </label>
+            <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink4 }}>
+              PDF or image · max 10 MB
+            </div>
+          </div>
+
+          {/* Data source selector */}
+          <div>
+            <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3, fontWeight: 500, marginBottom: 10 }}>
+              Data source
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {DATA_SOURCES.map(ds => (
+                <div
+                  key={ds.id}
+                  onClick={() => setSelectedSource(ds.id)}
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: 8,
+                    border: `1px solid ${selectedSource === ds.id ? T.accent : T.border}`,
+                    background: selectedSource === ds.id ? "rgba(200,165,106,0.06)" : T.surfaceRaised,
+                    cursor: "pointer",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    transition: "border-color 0.12s",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{
+                      width: 14, height: 14, borderRadius: "50%",
+                      border: `2px solid ${selectedSource === ds.id ? T.accent : T.borderMed}`,
+                      background: selectedSource === ds.id ? T.accent : "transparent",
+                      flexShrink: 0,
+                    }} />
+                    <span style={{ fontFamily: T.sans, fontSize: 13, color: T.ink }}>{ds.label}</span>
+                  </div>
+                  <div style={{ display: "flex", gap: 20, flexShrink: 0 }}>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontFamily: T.sans, fontSize: 10, color: T.ink4 }}>Last uploaded</div>
+                      <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3 }}>{ds.lastUploaded}</div>
+                    </div>
+                    {ds.nextExpected && (
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontFamily: T.sans, fontSize: 10, color: T.ink4 }}>Next expected</div>
+                        <div style={{ fontFamily: T.sans, fontSize: 11, color: ds.nextUrgent ? T.warn : T.ink3 }}>
+                          {ds.nextExpected}{ds.nextUrgent ? " · 2 days" : ""}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Upload button */}
+          <button
+            onClick={handleConfirm}
+            style={{
+              fontFamily: T.sans, fontSize: 13, fontWeight: 500,
+              padding: "10px 20px", background: T.ok, color: T.bg,
+              border: "none", cursor: "pointer", borderRadius: 8,
+              width: "100%",
+            }}
+          >
+            Upload and process
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
+
 export default function MedicalPage() {
   const { pathology } = DATA
   const [openGroup, setOpenGroup] = useState<string | null>(null)
   const [shareToast, setShareToast] = useState(false)
+  const [uploadModalOpen, setUploadModalOpen] = useState(false)
+  const [uploadToast, setUploadToast] = useState(false)
 
   function handleShare() {
     setShareToast(true)
     setTimeout(() => setShareToast(false), 2800)
   }
 
+  // Listen for the custom event fired from the modal after confirm
+  useState(() => {
+    function onLabUpload() {
+      setUploadToast(true)
+      setTimeout(() => setUploadToast(false), 4000)
+    }
+    if (typeof window !== "undefined") {
+      window.addEventListener("lab-upload-toast", onLabUpload)
+      return () => window.removeEventListener("lab-upload-toast", onLabUpload)
+    }
+  })
+
   return (
     <div style={{ padding: "48px 48px 80px", maxWidth: 960, margin: "0 auto" }}>
+
+      {uploadModalOpen && <UploadModal onClose={() => setUploadModalOpen(false)} />}
 
       {/* Page header */}
       <div style={{ marginBottom: 56 }}>
@@ -390,6 +589,16 @@ export default function MedicalPage() {
             </div>
           </div>
           <div style={{ display: "flex", gap: 8, position: "relative" }}>
+            <button
+              onClick={() => setUploadModalOpen(true)}
+              style={{
+                fontFamily: T.sans, fontSize: 13, border: `1px solid ${T.borderMed}`,
+                padding: "8px 16px", color: T.ink2, background: "transparent",
+                cursor: "pointer", borderRadius: 8,
+              }}
+            >
+              Upload lab results
+            </button>
             <button
               onClick={handleShare}
               style={{
@@ -422,6 +631,17 @@ export default function MedicalPage() {
                 whiteSpace: "nowrap", zIndex: 10, borderRadius: 8,
               }}>
                 Draft prepared for Dr. Sanjay Rao · review before sending
+              </div>
+            )}
+            {uploadToast && (
+              <div style={{
+                position: "fixed", bottom: 28, right: 28, zIndex: 300,
+                background: T.surfaceRaised, border: `1px solid ${T.okMuted}`,
+                padding: "10px 16px", fontFamily: T.sans, fontSize: 13, color: T.ok,
+                whiteSpace: "nowrap", borderRadius: 10,
+                boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+              }}>
+                Lab results uploaded — agent will process and flag changes within 2 hours
               </div>
             )}
           </div>
