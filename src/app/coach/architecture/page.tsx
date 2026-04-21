@@ -173,9 +173,635 @@ const LAYER_LABELS: Record<NodeKind, string> = {
 
 const LAYER_ORDER: NodeKind[] = ["data", "agent", "coach", "client", "output"]
 
-// ─── Component ───────────────────────────────────────────────────────────────
+// ─── Workflow types ───────────────────────────────────────────────────────────
 
-export default function ArchitecturePage() {
+interface WfState {
+  id: string
+  label: string
+  color: string
+  bg: string
+  dot: string
+  entry: string
+  actor: string
+  visibility?: string
+  isActive?: boolean
+}
+
+interface WfTransition {
+  fromId: string
+  toId: string
+  label: string
+  actor: string
+}
+
+interface Lifecycle {
+  id: string
+  title: string
+  description: string
+  states: WfState[]
+  transitions: WfTransition[]
+  currentStateId: string
+}
+
+const PURPLE = "#9B8FA9"
+const PURPLE_BG = "rgba(155,143,169,0.10)"
+
+const LIFECYCLES: Lifecycle[] = [
+  {
+    id: "protocol",
+    title: "Protocol outcome",
+    description: "Tracks whether a signed protocol is producing measurable improvement in the target metric.",
+    currentStateId: "monitoring",
+    states: [
+      {
+        id: "pending",
+        label: "Pending",
+        color: T.ink3,
+        bg: "rgba(125,121,114,0.10)",
+        dot: T.ink3,
+        entry: "Darcy signs a protocol.",
+        actor: "System",
+      },
+      {
+        id: "monitoring",
+        label: "Monitoring",
+        color: T.warn,
+        bg: T.warnSubtle,
+        dot: T.warn,
+        entry: "≥7 days of data accumulated.",
+        actor: "Agent",
+      },
+      {
+        id: "effective",
+        label: "Effective",
+        color: T.ok,
+        bg: T.okSubtle,
+        dot: T.ok,
+        entry: "Metric improvement ≥ threshold, sustained ≥14 days.",
+        actor: "Agent recommends, Darcy confirms",
+      },
+      {
+        id: "partial",
+        label: "Partial",
+        color: PURPLE,
+        bg: PURPLE_BG,
+        dot: PURPLE,
+        entry: "Improvement <50% of target.",
+        actor: "Agent recommends, Darcy confirms",
+      },
+    ],
+    transitions: [
+      { fromId: "pending",    toId: "monitoring", label: "≥7 days data",        actor: "Agent" },
+      { fromId: "monitoring", toId: "effective",  label: "Metric improves",      actor: "Darcy confirms" },
+      { fromId: "monitoring", toId: "partial",    label: "Improvement <50%",     actor: "Darcy confirms" },
+    ],
+  },
+  {
+    id: "flag",
+    title: "Attention flag",
+    description: "Lifecycle for any threshold breach or pattern anomaly detected by the agent.",
+    currentStateId: "raised",
+    states: [
+      {
+        id: "raised",
+        label: "Raised",
+        color: T.warn,
+        bg: T.warnSubtle,
+        dot: T.warn,
+        entry: "Metric crosses threshold or matches historical pattern.",
+        actor: "Agent",
+      },
+      {
+        id: "triaged",
+        label: "Triaged",
+        color: T.ink2,
+        bg: "rgba(181,176,166,0.10)",
+        dot: T.ink2,
+        entry: "Darcy selects: Act / Notify Jamie / Watch.",
+        actor: "Darcy",
+      },
+      {
+        id: "resolved",
+        label: "Resolved",
+        color: T.ok,
+        bg: T.okSubtle,
+        dot: T.ok,
+        entry: "Metric at baseline ≥48h, or Darcy manually resolves.",
+        actor: "Agent or Darcy",
+      },
+    ],
+    transitions: [
+      { fromId: "raised",   toId: "triaged",  label: "Darcy reviews",      actor: "Darcy" },
+      { fromId: "triaged",  toId: "resolved", label: "Metric at baseline",  actor: "Agent or Darcy" },
+    ],
+  },
+  {
+    id: "corrector",
+    title: "Course corrector",
+    description: "An agent-drafted recommendation that moves through approval and delivery to resolution.",
+    currentStateId: "active",
+    states: [
+      {
+        id: "draft",
+        label: "Draft",
+        color: T.ink3,
+        bg: "rgba(125,121,114,0.10)",
+        dot: T.ink3,
+        entry: "Agent prepares recommendation.",
+        actor: "Agent",
+        visibility: "Darcy only",
+      },
+      {
+        id: "active",
+        label: "Active",
+        color: T.warn,
+        bg: T.warnSubtle,
+        dot: T.warn,
+        entry: "Darcy clicks approve.",
+        actor: "Darcy",
+        visibility: "Both",
+      },
+      {
+        id: "acknowledged",
+        label: "Acknowledged",
+        color: T.ok,
+        bg: T.okSubtle,
+        dot: T.ok,
+        entry: "Jamie taps acknowledge.",
+        actor: "Jamie",
+        visibility: "Both",
+      },
+      {
+        id: "resolved_c",
+        label: "Resolved",
+        color: T.ok,
+        bg: T.okSubtle,
+        dot: T.ok,
+        entry: "Metric restored.",
+        actor: "Agent",
+        visibility: "Both",
+      },
+      {
+        id: "superseded",
+        label: "Superseded",
+        color: T.ink4,
+        bg: "rgba(74,71,67,0.10)",
+        dot: T.ink4,
+        entry: "Darcy issues replacement.",
+        actor: "Darcy",
+        visibility: "Both",
+      },
+    ],
+    transitions: [
+      { fromId: "draft",        toId: "active",       label: "Darcy approves",    actor: "Darcy" },
+      { fromId: "active",       toId: "acknowledged", label: "Jamie acknowledges", actor: "Jamie" },
+      { fromId: "acknowledged", toId: "resolved_c",   label: "Metric restored",   actor: "Agent" },
+      { fromId: "active",       toId: "superseded",   label: "Replaced",          actor: "Darcy" },
+    ],
+  },
+  {
+    id: "directive",
+    title: "Directive",
+    description: "Formal instructions from Darcy to Jamie. Jamie never sees draft or in-review states.",
+    currentStateId: "signed",
+    states: [
+      {
+        id: "dir_draft",
+        label: "Draft",
+        color: T.ink3,
+        bg: "rgba(125,121,114,0.10)",
+        dot: T.ink3,
+        entry: "Agent prepares, awaiting Darcy.",
+        actor: "Agent",
+        visibility: "Darcy only",
+      },
+      {
+        id: "dir_inreview",
+        label: "In review",
+        color: T.warn,
+        bg: T.warnSubtle,
+        dot: T.warn,
+        entry: "Darcy is editing.",
+        actor: "Darcy",
+        visibility: "Darcy only",
+      },
+      {
+        id: "signed",
+        label: "Signed",
+        color: T.ok,
+        bg: T.okSubtle,
+        dot: T.ok,
+        entry: "Approved and published.",
+        actor: "Darcy",
+        visibility: "Both",
+      },
+    ],
+    transitions: [
+      { fromId: "dir_draft",    toId: "dir_inreview", label: "Darcy starts editing", actor: "Darcy" },
+      { fromId: "dir_inreview", toId: "signed",        label: "Darcy approves",       actor: "Darcy" },
+    ],
+  },
+]
+
+// ─── Workflow sub-components ──────────────────────────────────────────────────
+
+function StatePill({
+  state,
+  isSelected,
+  isCurrentlyActive,
+  onClick,
+}: {
+  state: WfState
+  isSelected: boolean
+  isCurrentlyActive: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        all: "unset",
+        cursor: "pointer",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        padding: "6px 12px",
+        borderRadius: 20,
+        background: isSelected ? state.bg : "rgba(255,255,255,0.03)",
+        border: `1px solid ${isSelected ? state.color : (isCurrentlyActive ? state.color + "66" : "rgba(255,252,245,0.08)")}`,
+        transition: "all 0.15s",
+        flexShrink: 0,
+        position: "relative",
+      }}
+    >
+      <span style={{
+        width: 6,
+        height: 6,
+        borderRadius: "50%",
+        background: state.dot,
+        flexShrink: 0,
+        boxShadow: isCurrentlyActive ? `0 0 0 3px ${state.dot}33` : "none",
+      }} />
+      <span style={{
+        fontFamily: T.sans,
+        fontSize: 12,
+        fontWeight: isSelected || isCurrentlyActive ? 600 : 400,
+        color: isSelected || isCurrentlyActive ? state.color : T.ink2,
+        whiteSpace: "nowrap",
+      }}>
+        {state.label}
+      </span>
+      {isCurrentlyActive && (
+        <span style={{
+          position: "absolute",
+          top: -6,
+          right: -4,
+          background: state.color,
+          borderRadius: 4,
+          padding: "1px 5px",
+          fontFamily: T.sans,
+          fontSize: 9,
+          fontWeight: 600,
+          color: T.bg,
+          whiteSpace: "nowrap",
+        }}>
+          now
+        </span>
+      )}
+    </button>
+  )
+}
+
+function TransitionArrow({ transition, color }: { transition: WfTransition; color: string }) {
+  return (
+    <div style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: 3,
+      flexShrink: 0,
+      minWidth: 72,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 0, width: "100%" }}>
+        <div style={{ flex: 1, height: 1, background: color + "44" }} />
+        <span style={{ color: color + "88", fontSize: 12, lineHeight: 1 }}>›</span>
+      </div>
+      <span style={{
+        fontFamily: T.sans,
+        fontSize: 10,
+        color: T.ink3,
+        textAlign: "center",
+        lineHeight: 1.3,
+        maxWidth: 72,
+      }}>
+        {transition.label}
+      </span>
+      <span style={{
+        fontFamily: T.sans,
+        fontSize: 9,
+        color: T.ink4,
+        textAlign: "center",
+        background: "rgba(255,252,245,0.04)",
+        borderRadius: 4,
+        padding: "1px 6px",
+      }}>
+        {transition.actor}
+      </span>
+    </div>
+  )
+}
+
+function LifecycleCard({ lifecycle }: { lifecycle: Lifecycle }) {
+  const [selectedStateId, setSelectedStateId] = useState<string | null>(null)
+
+  const handleStateClick = (stateId: string) => {
+    setSelectedStateId(prev => prev === stateId ? null : stateId)
+  }
+
+  const selectedState = lifecycle.states.find(s => s.id === selectedStateId)
+
+  // Build a linear path for the main flow (excluding branching transitions)
+  // For protocol: pending → monitoring → effective (main path), with partial as branch
+  // For corrector: draft → active → acknowledged → resolved_c (main), superseded as branch
+  // We'll render the main linear chain + show branching transitions separately
+
+  // Determine main linear chain: follow first transition from each state
+  const buildMainChain = (): string[] => {
+    const chain: string[] = []
+    const firstState = lifecycle.states[0]
+    if (!firstState) return chain
+
+    chain.push(firstState.id)
+    const visited = new Set<string>([firstState.id])
+
+    // Walk through transitions to build main chain
+    let current = firstState.id
+    while (true) {
+      const next = lifecycle.transitions.find(t => t.fromId === current && !visited.has(t.toId))
+      if (!next) break
+      // For protocol, skip the "partial" branch from monitoring (go to effective first)
+      // For corrector, skip superseded from active
+      chain.push(next.toId)
+      visited.add(next.toId)
+      current = next.toId
+    }
+
+    return chain
+  }
+
+  const mainChain = buildMainChain()
+  const branchTransitions = lifecycle.transitions.filter(t => {
+    const fromIdx = mainChain.indexOf(t.fromId)
+    const toIdx = mainChain.indexOf(t.toId)
+    return fromIdx === -1 || toIdx === -1 || toIdx <= fromIdx
+  })
+
+  // Build display sequence: interleave states with transitions
+  interface ChainItem {
+    type: "state"
+    stateId: string
+  }
+  interface TransItem {
+    type: "transition"
+    transition: WfTransition
+  }
+  type DisplayItem = ChainItem | TransItem
+
+  const displayItems: DisplayItem[] = []
+  for (let i = 0; i < mainChain.length; i++) {
+    displayItems.push({ type: "state", stateId: mainChain[i] })
+    if (i < mainChain.length - 1) {
+      const nextId = mainChain[i + 1]
+      const trans = lifecycle.transitions.find(t => t.fromId === mainChain[i] && t.toId === nextId)
+      if (trans) {
+        displayItems.push({ type: "transition", transition: trans })
+      }
+    }
+  }
+
+  // States not in main chain (branches)
+  const branchStates = lifecycle.states.filter(s => !mainChain.includes(s.id))
+
+  return (
+    <div style={{
+      background: T.surface,
+      borderRadius: 12,
+      padding: "24px 28px",
+    }}>
+      {/* Card header */}
+      <div style={{ marginBottom: 16 }}>
+        <h3 style={{
+          fontFamily: T.serif,
+          fontSize: 16,
+          fontWeight: 400,
+          color: T.ink,
+          margin: "0 0 6px",
+        }}>
+          {lifecycle.title}
+        </h3>
+        <p style={{
+          fontFamily: T.sans,
+          fontSize: 13,
+          color: T.ink3,
+          margin: 0,
+          lineHeight: 1.55,
+        }}>
+          {lifecycle.description}
+        </p>
+      </div>
+
+      {/* Main flow diagram */}
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        flexWrap: "wrap",
+        gap: 6,
+        marginBottom: branchTransitions.length > 0 || branchStates.length > 0 ? 12 : 16,
+        padding: "12px 0",
+        borderTop: `1px solid ${T.border}`,
+        borderBottom: branchTransitions.length > 0 ? "none" : `1px solid ${T.border}`,
+      }}>
+        {displayItems.map((item, idx) => {
+          if (item.type === "state") {
+            const state = lifecycle.states.find(s => s.id === item.stateId)!
+            return (
+              <StatePill
+                key={item.stateId + idx}
+                state={state}
+                isSelected={selectedStateId === state.id}
+                isCurrentlyActive={lifecycle.currentStateId === state.id}
+                onClick={() => handleStateClick(state.id)}
+              />
+            )
+          } else {
+            return (
+              <TransitionArrow
+                key={`trans-${idx}`}
+                transition={item.transition}
+                color={T.ink3}
+              />
+            )
+          }
+        })}
+      </div>
+
+      {/* Branch states and transitions */}
+      {(branchTransitions.length > 0 || branchStates.length > 0) && (
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 6,
+          marginBottom: 16,
+          padding: "10px 0 12px",
+          borderBottom: `1px solid ${T.border}`,
+          paddingLeft: 16,
+          borderLeft: `2px solid ${T.border}`,
+          marginLeft: 8,
+        }}>
+          <span style={{ fontFamily: T.sans, fontSize: 10, color: T.ink4, marginRight: 4 }}>
+            alt
+          </span>
+          {branchTransitions.map((t, idx) => {
+            const toState = lifecycle.states.find(s => s.id === t.toId)
+            if (!toState) return null
+            return (
+              <div key={idx} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <TransitionArrow transition={t} color={T.ink4} />
+                <StatePill
+                  state={toState}
+                  isSelected={selectedStateId === toState.id}
+                  isCurrentlyActive={lifecycle.currentStateId === toState.id}
+                  onClick={() => handleStateClick(toState.id)}
+                />
+              </div>
+            )
+          })}
+          {branchStates.filter(s => !branchTransitions.some(t => t.toId === s.id)).map(state => (
+            <StatePill
+              key={state.id}
+              state={state}
+              isSelected={selectedStateId === state.id}
+              isCurrentlyActive={lifecycle.currentStateId === state.id}
+              onClick={() => handleStateClick(state.id)}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Selected state definition panel */}
+      {selectedState && (
+        <div style={{
+          background: selectedState.bg,
+          border: `1px solid ${selectedState.color}33`,
+          borderRadius: 8,
+          padding: "12px 16px",
+          marginBottom: 12,
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{
+                fontFamily: T.sans,
+                fontSize: 11,
+                fontWeight: 600,
+                color: selectedState.color,
+                marginBottom: 6,
+                textTransform: "none",
+              }}>
+                {selectedState.label}
+              </div>
+              <div style={{
+                fontFamily: T.sans,
+                fontSize: 12,
+                color: T.ink2,
+                marginBottom: 6,
+                lineHeight: 1.5,
+              }}>
+                <span style={{ color: T.ink3 }}>Entry: </span>{selectedState.entry}
+              </div>
+              <div style={{ display: "flex", gap: 16 }}>
+                <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink2 }}>
+                  <span style={{ color: T.ink3 }}>Actor: </span>{selectedState.actor}
+                </div>
+                {selectedState.visibility && (
+                  <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink2 }}>
+                    <span style={{ color: T.ink3 }}>Visibility: </span>{selectedState.visibility}
+                  </div>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={() => setSelectedStateId(null)}
+              style={{
+                all: "unset",
+                cursor: "pointer",
+                fontFamily: T.sans,
+                fontSize: 14,
+                color: T.ink4,
+                padding: "0 4px",
+                lineHeight: 1,
+              }}
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Actor ownership summary */}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {Array.from(new Set(lifecycle.transitions.map(t => t.actor))).map(actor => (
+          <div key={actor} style={{
+            fontFamily: T.sans,
+            fontSize: 10,
+            color: T.ink3,
+            background: "rgba(255,252,245,0.04)",
+            borderRadius: 6,
+            padding: "3px 8px",
+          }}>
+            {actor}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Workflows tab ────────────────────────────────────────────────────────────
+
+function WorkflowsTab() {
+  return (
+    <div style={{ padding: "40px 0 80px" }}>
+      <div style={{ marginBottom: 32 }}>
+        <p style={{ fontFamily: T.sans, fontSize: 11, fontWeight: 500, color: T.ink3, margin: "0 0 8px" }}>
+          Lifecycle models
+        </p>
+        <h2 style={{ fontFamily: T.serif, fontSize: 22, fontWeight: 400, margin: "0 0 12px", color: T.ink }}>
+          State machines
+        </h2>
+        <p style={{ fontFamily: T.sans, fontSize: 13, color: T.ink3, margin: 0, maxWidth: 600, lineHeight: 1.65 }}>
+          Each key entity in the system moves through a defined lifecycle. Click any state pill to expand its
+          definition. States marked <span style={{ color: T.ok, fontWeight: 500 }}>now</span> reflect
+          Jamie&apos;s current data.
+        </p>
+      </div>
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: 24,
+      }}>
+        {LIFECYCLES.map(lc => (
+          <LifecycleCard key={lc.id} lifecycle={lc} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Architecture tab ─────────────────────────────────────────────────────────
+
+function ArchitectureTab() {
   const [activeEdge, setActiveEdge] = useState<ArchEdge | null>(null)
   const [activeNode, setActiveNode] = useState<ArchNode | null>(null)
 
@@ -201,24 +827,9 @@ export default function ArchitecturePage() {
   }
 
   return (
-    <div style={{ padding: "40px 48px 80px", minHeight: "100vh" }}>
-
-      {/* Header */}
-      <div style={{ marginBottom: 40 }}>
-        <p style={{ fontFamily: T.sans, fontSize: 11, fontWeight: 500, color: T.ink3, margin: "0 0 8px" }}>
-          System architecture
-        </p>
-        <h1 style={{ fontFamily: T.serif, fontSize: 26, fontWeight: 400, margin: "0 0 12px", color: T.ink }}>
-          How the two products talk to each other
-        </h1>
-        <p style={{ fontFamily: T.sans, fontSize: 13, color: T.ink3, margin: 0, maxWidth: 600, lineHeight: 1.65 }}>
-          Every action Darcy takes in the Coach product — editing strategy, publishing directives, approving agent drafts —
-          produces a visible result in Jamie's Client product. Click any node or edge to see details.
-        </p>
-      </div>
-
+    <>
       {/* Legend */}
-      <div style={{ display: "flex", gap: 20, flexWrap: "wrap", marginBottom: 32 }}>
+      <div style={{ display: "flex", gap: 20, flexWrap: "wrap", marginBottom: 32, paddingTop: 8 }}>
         {LAYER_ORDER.map(kind => (
           <div key={kind} style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <div style={{
@@ -583,6 +1194,73 @@ export default function ArchitecturePage() {
           )
         })}
       </div>
+    </>
+  )
+}
+
+// ─── Page component ───────────────────────────────────────────────────────────
+
+type TabId = "architecture" | "workflows"
+
+export default function ArchitecturePage() {
+  const [activeTab, setActiveTab] = useState<TabId>("architecture")
+
+  return (
+    <div style={{ padding: "40px 48px 80px", minHeight: "100vh" }}>
+
+      {/* Header */}
+      <div style={{ marginBottom: 32 }}>
+        <p style={{ fontFamily: T.sans, fontSize: 11, fontWeight: 500, color: T.ink3, margin: "0 0 8px" }}>
+          System architecture
+        </p>
+        <h1 style={{ fontFamily: T.serif, fontSize: 26, fontWeight: 400, margin: "0 0 12px", color: T.ink }}>
+          How the two products talk to each other
+        </h1>
+        <p style={{ fontFamily: T.sans, fontSize: 13, color: T.ink3, margin: 0, maxWidth: 600, lineHeight: 1.65 }}>
+          Every action Darcy takes in the Coach product — editing strategy, publishing directives, approving agent drafts —
+          produces a visible result in Jamie&apos;s Client product. Click any node or edge to see details.
+        </p>
+      </div>
+
+      {/* Tab switcher */}
+      <div style={{
+        display: "inline-flex",
+        gap: 2,
+        background: T.surfaceRaised,
+        borderRadius: 10,
+        padding: 4,
+        marginBottom: 32,
+      }}>
+        {(["architecture", "workflows"] as TabId[]).map(tab => {
+          const isActive = activeTab === tab
+          const label = tab === "architecture" ? "Architecture" : "Workflows"
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                all: "unset",
+                cursor: "pointer",
+                fontFamily: T.sans,
+                fontSize: 13,
+                fontWeight: isActive ? 500 : 400,
+                color: isActive ? T.ink : T.ink3,
+                padding: "7px 18px",
+                borderRadius: 7,
+                background: isActive ? T.surface : "transparent",
+                transition: "all 0.15s",
+                boxShadow: isActive ? "0 1px 4px rgba(0,0,0,0.25)" : "none",
+              }}
+            >
+              {label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Tab content */}
+      {activeTab === "architecture" && <ArchitectureTab />}
+      {activeTab === "workflows"    && <WorkflowsTab />}
 
     </div>
   )
