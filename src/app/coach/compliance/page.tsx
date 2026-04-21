@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { DATA } from "@/data/james"
+import { T, LifecycleChip } from "@/components/Primitives"
 
 // ─── Outcomes data ────────────────────────────────────────────────────────────
 
@@ -66,21 +67,22 @@ const OUTCOMES: Outcome[] = [
   },
 ]
 
-const OUTCOME_STATUS_STYLE: Record<OutcomeStatus, { label: string; color: string }> = {
-  effective:  { label: "Effective",  color: "var(--ok)" },
-  monitoring: { label: "Monitoring", color: "var(--warn)" },
-  partial:    { label: "Partial",    color: "#9B8FA9" },
-  pending:    { label: "Pending",    color: "var(--ink-3)" },
+const OUTCOME_STATUS_STYLE: Record<OutcomeStatus, { label: string; color: string; bg: string }> = {
+  effective:  { label: "Effective",  color: T.ok,    bg: T.okSubtle },
+  monitoring: { label: "Monitoring", color: T.warn,  bg: T.warnSubtle },
+  partial:    { label: "Partial",    color: "#9B8FA9", bg: "rgba(155,143,169,0.08)" },
+  pending:    { label: "Pending",    color: T.ink3,  bg: "rgba(125,121,114,0.08)" },
 }
 
 function OutcomesSection() {
   const [selected, setSelected] = useState<string | null>(null)
 
   return (
-    <div className="panel">
-      <div className="panel-head">
-        <span>Outcomes · did it work?</span>
-        <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+    <div style={{ background: T.surface, borderRadius: 12 }}>
+      {/* Head */}
+      <div style={{ padding: "16px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 600, color: T.ink }}>Outcomes · did it work?</span>
+        <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3 }}>
           {OUTCOMES.filter(o => o.status === "effective").length} effective · {OUTCOMES.filter(o => o.status === "monitoring").length} monitoring · {OUTCOMES.filter(o => o.status === "partial").length} partial
         </span>
       </div>
@@ -90,44 +92,44 @@ function OutcomesSection() {
           const style = OUTCOME_STATUS_STYLE[outcome.status]
           const isSelected = selected === outcome.id
           return (
-            <div key={outcome.id} style={{ borderTop: i > 0 ? "1px solid var(--hair)" : undefined }}>
+            <div key={outcome.id} style={{ borderTop: i > 0 ? `1px solid ${T.border}` : undefined }}>
               <div
                 onClick={() => setSelected(isSelected ? null : outcome.id)}
                 style={{ padding: "18px 24px", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: 20 }}
               >
-                {/* Status badge */}
+                {/* Status chip */}
                 <div style={{ flexShrink: 0, paddingTop: 2 }}>
-                  <div style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.1em", color: style.color, border: `1px solid ${style.color}`, padding: "2px 8px", whiteSpace: "nowrap" }}>
+                  <span style={{ fontFamily: T.sans, fontSize: 11, color: style.color, background: style.bg, padding: "3px 10px", borderRadius: 20, fontWeight: 500, display: "inline-block" }}>
                     {style.label}
-                  </div>
+                  </span>
                 </div>
 
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--ink)", marginBottom: 4 }}>{outcome.protocol}</div>
-                  <div style={{ fontFamily: "var(--mono)", fontSize: 8.5, color: "var(--ink-4)", marginBottom: 8 }}>Issued {outcome.issuedDate} · {outcome.daysAgo} days ago</div>
+                  <div style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 500, color: T.ink, marginBottom: 4 }}>{outcome.protocol}</div>
+                  <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink4, marginBottom: 10 }}>Issued {outcome.issuedDate} · {outcome.daysAgo} days ago</div>
 
                   {/* Before / After */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 12, alignItems: "center", marginBottom: 6 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 12, alignItems: "center", marginBottom: 8 }}>
                     <div>
-                      <div style={{ fontFamily: "var(--mono)", fontSize: 7.5, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-4)", marginBottom: 3 }}>Before</div>
-                      <div style={{ fontSize: 11.5, color: "var(--ink-3)", lineHeight: 1.4 }}>{outcome.before}</div>
+                      <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink4, marginBottom: 4, fontWeight: 500 }}>Before</div>
+                      <div style={{ fontFamily: T.sans, fontSize: 13, color: T.ink3, lineHeight: 1.4 }}>{outcome.before}</div>
                     </div>
-                    <div style={{ fontFamily: "var(--mono)", fontSize: 14, color: "var(--hair-strong)" }}>→</div>
+                    <div style={{ fontFamily: T.sans, fontSize: 16, color: T.border }}>→</div>
                     <div>
-                      <div style={{ fontFamily: "var(--mono)", fontSize: 7.5, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-4)", marginBottom: 3 }}>After</div>
-                      <div style={{ fontSize: 11.5, color: outcome.after ? "var(--ink-2)" : "var(--ink-4)", lineHeight: 1.4 }}>{outcome.after ?? "Still measuring…"}</div>
+                      <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink4, marginBottom: 4, fontWeight: 500 }}>After</div>
+                      <div style={{ fontFamily: T.sans, fontSize: 13, color: outcome.after ? T.ink2 : T.ink4, lineHeight: 1.4 }}>{outcome.after ?? "Still measuring…"}</div>
                     </div>
                   </div>
 
-                  <div style={{ fontFamily: "var(--mono)", fontSize: 9.5, color: style.color, letterSpacing: "0.02em" }}>{outcome.verdict}</div>
+                  <div style={{ fontFamily: T.sans, fontSize: 13, color: style.color, fontWeight: 500 }}>{outcome.verdict}</div>
                 </div>
 
-                <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-4)", flexShrink: 0 }}>{isSelected ? "▲" : "▼"}</div>
+                <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink4, flexShrink: 0 }}>{isSelected ? "▲" : "▼"}</div>
               </div>
 
               {isSelected && (
-                <div style={{ padding: "0 24px 20px 88px", borderTop: "1px solid var(--hair)" }}>
-                  <p style={{ fontSize: 13, color: "var(--ink-2)", lineHeight: 1.7, margin: "16px 0 0", maxWidth: 560 }}>{outcome.note}</p>
+                <div style={{ padding: "0 24px 20px 88px", borderTop: `1px solid ${T.border}` }}>
+                  <p style={{ fontFamily: T.sans, fontSize: 13, color: T.ink2, lineHeight: 1.7, margin: "16px 0 0", maxWidth: 560 }}>{outcome.note}</p>
                 </div>
               )}
             </div>
@@ -204,29 +206,22 @@ const PROTOCOLS = [
 ]
 
 // ─── 30-day compliance grid ───────────────────────────────────────────────────
-// Simple grid derived from the 30-day rawTimeSeries — each cell is a day,
-// colour-coded by overall adherence score for that day.
 
-const DAYS_OF_WEEK = ["M", "T", "W", "T", "F", "S", "S"]
+const DAYS_OF_WEEK = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
-// Mock 30-day adherence — Apr 1–20, with realistic variation
 const THIRTY_DAY_ADHERENCE = [
-  // Week 1: Apr 1–6 (starting Tue)
   null, null, 0.92, 0.88, 0.95, 0.90, 0.72,
-  // Week 2: Apr 7–13
   0.85, 0.78, 0.82, 0.90, 0.68, 0.72, 0.65,
-  // Week 3: Apr 14–20 (today)
   0.82, 0.88, 0.74, 0.70, 0.78, 0.75, 0.71,
-  // Week 4 placeholder (future)
   null, null, null, null, null, null, null,
 ]
 
 function adColor(v: number | null): string {
   if (v === null) return "transparent"
-  if (v >= 0.9) return "var(--ok)"
-  if (v >= 0.75) return "color-mix(in srgb, var(--ok) 55%, var(--warn))"
-  if (v >= 0.6) return "var(--warn)"
-  return "var(--alert)"
+  if (v >= 0.9) return T.ok
+  if (v >= 0.75) return `color-mix(in srgb, ${T.ok} 55%, ${T.warn})`
+  if (v >= 0.6) return T.warn
+  return T.alert
 }
 
 // ─── Flags ────────────────────────────────────────────────────────────────────
@@ -255,8 +250,6 @@ const FLAGS = [
   },
 ]
 
-// ─── Overall score ────────────────────────────────────────────────────────────
-
 const quarterScore = Math.round(
   PROTOCOLS.reduce((sum, p) => sum + p.rate, 0) / PROTOCOLS.length * 100
 )
@@ -268,49 +261,49 @@ export default function CoachCompliancePage() {
   const activeFlags = FLAGS.filter(f => !dismissedFlags.includes(f.id))
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: "24px 32px", maxWidth: 1200 }}>
+    <div style={{ padding: "48px 48px 80px", maxWidth: 1200, margin: "0 auto", display: "flex", flexDirection: "column", gap: 56 }}>
 
       {/* Header */}
-      <div style={{ borderBottom: "1px solid var(--hair)", paddingBottom: 16 }}>
-        <div style={{ fontFamily: "var(--mono)", fontSize: 8.5, textTransform: "uppercase", letterSpacing: "0.14em", color: "var(--ok)", marginBottom: 6 }}>
+      <div>
+        <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ok, marginBottom: 8, fontWeight: 500 }}>
           Compliance monitoring · Darcy O&apos;Sullivan
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-          <h1 style={{ fontFamily: "var(--serif)", fontSize: 26, fontWeight: 400, color: "var(--ink)", margin: 0, letterSpacing: "-0.02em" }}>
+          <h1 style={{ fontFamily: T.serif, fontSize: 28, fontWeight: 400, color: T.ink, margin: 0, letterSpacing: "-0.02em" }}>
             Jamie Garis · protocol adherence
           </h1>
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-3)", marginBottom: 4 }}>This week (7-day)</div>
-            <div style={{ fontFamily: "var(--mono)", fontSize: 28, letterSpacing: "-0.04em", color: quarterScore >= 85 ? "var(--ok)" : quarterScore >= 70 ? "var(--warn)" : "var(--alert)", lineHeight: 1 }}>
-              {Math.round(PROTOCOLS.reduce((s, p) => s + p.rate, 0) / PROTOCOLS.length * 100)}%
+            <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3, marginBottom: 4, fontWeight: 500 }}>This week (7-day)</div>
+            <div style={{ fontFamily: T.mono, fontSize: 32, letterSpacing: "-0.04em", color: quarterScore >= 85 ? T.ok : quarterScore >= 70 ? T.warn : T.alert, lineHeight: 1, fontWeight: 300 }}>
+              {quarterScore}%
             </div>
           </div>
         </div>
       </div>
 
-      {/* Outcomes — lead with this, not adherence */}
+      {/* Outcomes — lead with this */}
       <OutcomesSection />
 
       {/* Flags */}
       {activeFlags.length > 0 && (
-        <div className="panel">
-          <div className="panel-head">
-            <span>Attention required</span>
-            <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--warn)", textTransform: "uppercase", letterSpacing: "0.08em" }}>{activeFlags.length} open</span>
+        <div style={{ background: T.surface, borderRadius: 12 }}>
+          <div style={{ padding: "16px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 600, color: T.ink }}>Attention required</span>
+            <span style={{ fontFamily: T.sans, fontSize: 12, color: T.warn, fontWeight: 500 }}>{activeFlags.length} open</span>
           </div>
           {activeFlags.map((flag, i) => (
-            <div key={flag.id} style={{ display: "flex", alignItems: "stretch", borderTop: i > 0 ? "1px solid var(--hair)" : "1px solid var(--hair)" }}>
-              <div style={{ width: 3, background: flag.severity === "warn" ? "var(--warn)" : "var(--accent)", flexShrink: 0 }} />
-              <div style={{ flex: 1, padding: "12px 18px", display: "flex", gap: 16, alignItems: "center" }}>
+            <div key={flag.id} style={{ display: "flex", alignItems: "stretch", borderTop: i > 0 ? `1px solid ${T.border}` : `1px solid ${T.border}` }}>
+              <div style={{ width: 3, background: flag.severity === "warn" ? T.warn : T.accent, flexShrink: 0 }} />
+              <div style={{ flex: 1, padding: "14px 20px", display: "flex", gap: 16, alignItems: "center" }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: "var(--mono)", fontSize: 10.5, color: "var(--ink)", marginBottom: 3 }}>{flag.label}</div>
-                  <div style={{ fontSize: 12, color: "var(--ink-3)", lineHeight: 1.5 }}>{flag.detail}</div>
+                  <div style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 500, color: T.ink, marginBottom: 4 }}>{flag.label}</div>
+                  <div style={{ fontFamily: T.sans, fontSize: 13, color: T.ink3, lineHeight: 1.5 }}>{flag.detail}</div>
                 </div>
                 <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                  <button style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.06em", border: "1px solid var(--warn)", color: "var(--warn)", padding: "4px 10px", background: "transparent", cursor: "pointer" }}>
+                  <button style={{ fontFamily: T.sans, fontSize: 12, border: `1px solid ${T.warn}`, color: T.warn, padding: "5px 12px", background: "transparent", cursor: "pointer", borderRadius: 6, fontWeight: 500 }}>
                     {flag.action}
                   </button>
-                  <button onClick={() => setDismissedFlags(p => [...p, flag.id])} style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.06em", border: "1px solid var(--hair-strong)", color: "var(--ink-3)", padding: "4px 10px", background: "transparent", cursor: "pointer" }}>
+                  <button onClick={() => setDismissedFlags(p => [...p, flag.id])} style={{ fontFamily: T.sans, fontSize: 12, border: `1px solid ${T.borderMed}`, color: T.ink3, padding: "5px 12px", background: "transparent", cursor: "pointer", borderRadius: 6 }}>
                     Dismiss
                   </button>
                 </div>
@@ -321,39 +314,39 @@ export default function CoachCompliancePage() {
       )}
 
       {/* Protocol adherence grid */}
-      <div className="panel">
-        <div className="panel-head">
-          <span>Protocol adherence · this week</span>
-          <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Click a protocol for detail</span>
+      <div style={{ background: T.surface, borderRadius: 12 }}>
+        <div style={{ padding: "16px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 600, color: T.ink }}>Protocol adherence · this week</span>
+          <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3 }}>Click a protocol for detail</span>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 1, background: "var(--hair)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 1, background: T.border }}>
           {PROTOCOLS.map(proto => {
             const selected = selectedProtocol === proto.id
-            const statusColor = proto.status === "ok" ? "var(--ok)" : "var(--warn)"
+            const statusColor = proto.status === "ok" ? T.ok : T.warn
             return (
               <div
                 key={proto.id}
                 onClick={() => setSelectedProtocol(selected ? null : proto.id)}
-                style={{ background: selected ? "var(--panel-2)" : "var(--bg)", padding: "16px 18px", cursor: "pointer", borderLeft: selected ? `2px solid ${statusColor}` : "2px solid transparent", transition: "background 0.1s" }}
+                style={{ background: selected ? T.surfaceRaised : T.surface, padding: "18px 20px", cursor: "pointer", borderLeft: selected ? `3px solid ${statusColor}` : "3px solid transparent" }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-                  <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink)", letterSpacing: "0.02em" }}>{proto.label}</div>
-                  <span style={{ fontFamily: "var(--mono)", fontSize: 8, color: statusColor, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                  <div style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 500, color: T.ink }}>{proto.label}</div>
+                  <span style={{ fontFamily: T.sans, fontSize: 11, color: statusColor, fontWeight: 500 }}>
                     {proto.status === "ok" ? "⬤ On track" : "◉ Watch"}
                   </span>
                 </div>
                 {/* Progress bar */}
-                <div style={{ height: 3, background: "var(--hair-strong)", marginBottom: 6 }}>
-                  <div style={{ height: "100%", width: `${proto.rate * 100}%`, background: statusColor, transition: "width 0.3s" }} />
+                <div style={{ height: 3, background: T.border, marginBottom: 8, borderRadius: 1 }}>
+                  <div style={{ height: "100%", width: `${proto.rate * 100}%`, background: statusColor, borderRadius: 1 }} />
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--mono)", fontSize: 9 }}>
-                  <span style={{ color: statusColor }}>{proto.thisWeek}</span>
-                  <span style={{ color: "var(--ink-4)" }}>🔥 {proto.streak}d streak</span>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ fontFamily: T.mono, fontSize: 13, color: statusColor, fontWeight: 300 }}>{proto.thisWeek}</span>
+                  <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink4 }}>🔥 {proto.streak}d streak</span>
                 </div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 8, color: "var(--ink-4)", marginTop: 4 }}>{proto.target}</div>
+                <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink4, marginTop: 4 }}>{proto.target}</div>
 
                 {selected && (
-                  <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid var(--hair)", fontSize: 12, color: "var(--ink-2)", lineHeight: 1.6 }}>
+                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.border}`, fontFamily: T.sans, fontSize: 13, color: T.ink2, lineHeight: 1.6 }}>
                     {proto.note}
                   </div>
                 )}
@@ -364,22 +357,22 @@ export default function CoachCompliancePage() {
       </div>
 
       {/* 30-day calendar grid */}
-      <div className="panel">
-        <div className="panel-head">
-          <span>30-day adherence calendar</span>
-          <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Apr 2026 · composite score per day</span>
+      <div style={{ background: T.surface, borderRadius: 12 }}>
+        <div style={{ padding: "16px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 600, color: T.ink }}>30-day adherence calendar</span>
+          <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3 }}>Apr 2026 · composite score per day</span>
         </div>
         <div style={{ padding: "20px 24px" }}>
           {/* Day labels */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4, marginBottom: 6 }}>
             {DAYS_OF_WEEK.map((d, i) => (
-              <div key={i} style={{ fontFamily: "var(--mono)", fontSize: 8, color: "var(--ink-4)", textAlign: "center", textTransform: "uppercase", letterSpacing: "0.08em" }}>{d}</div>
+              <div key={i} style={{ fontFamily: T.sans, fontSize: 11, color: T.ink4, textAlign: "center" }}>{d}</div>
             ))}
           </div>
           {/* Grid */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
             {THIRTY_DAY_ADHERENCE.map((v, i) => {
-              const dayNum = i - 1 // Apr starts Tue, so offset by 1
+              const dayNum = i - 1
               const date = dayNum >= 0 && dayNum < 30 ? dayNum + 1 : null
               const isToday = date === 20
               return (
@@ -387,9 +380,9 @@ export default function CoachCompliancePage() {
                   key={i}
                   style={{
                     height: 36,
-                    borderRadius: 3,
-                    background: v !== null ? `color-mix(in srgb, ${adColor(v)} 30%, var(--panel-2))` : "var(--panel-2)",
-                    border: isToday ? "1px solid var(--accent)" : "1px solid transparent",
+                    borderRadius: 6,
+                    background: v !== null ? `color-mix(in srgb, ${adColor(v)} 30%, ${T.surfaceRaised})` : T.surfaceRaised,
+                    border: isToday ? `1px solid ${T.accent}` : "1px solid transparent",
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
@@ -399,9 +392,9 @@ export default function CoachCompliancePage() {
                 >
                   {date && (
                     <>
-                      <div style={{ fontFamily: "var(--mono)", fontSize: 8, color: isToday ? "var(--accent)" : "var(--ink-3)" }}>{date}</div>
+                      <div style={{ fontFamily: T.mono, fontSize: 9, color: isToday ? T.accent : T.ink3 }}>{date}</div>
                       {v !== null && (
-                        <div style={{ fontFamily: "var(--mono)", fontSize: 7, color: adColor(v) }}>{Math.round(v * 100)}%</div>
+                        <div style={{ fontFamily: T.mono, fontSize: 8, color: adColor(v) }}>{Math.round(v * 100)}%</div>
                       )}
                     </>
                   )}
@@ -410,16 +403,16 @@ export default function CoachCompliancePage() {
             })}
           </div>
           {/* Legend */}
-          <div style={{ display: "flex", gap: 16, marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--hair)" }}>
+          <div style={{ display: "flex", gap: 16, marginTop: 16, paddingTop: 14, borderTop: `1px solid ${T.border}` }}>
             {[
-              { label: "≥90% — excellent", color: "var(--ok)" },
-              { label: "75–89% — good", color: "color-mix(in srgb, var(--ok) 55%, var(--warn))" },
-              { label: "60–74% — watch", color: "var(--warn)" },
-              { label: "<60% — flag", color: "var(--alert)" },
+              { label: "≥90% — excellent", color: T.ok },
+              { label: "75–89% — good", color: `color-mix(in srgb, ${T.ok} 55%, ${T.warn})` },
+              { label: "60–74% — watch", color: T.warn },
+              { label: "<60% — flag", color: T.alert },
             ].map(item => (
-              <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                <div style={{ width: 10, height: 10, borderRadius: 2, background: `color-mix(in srgb, ${item.color} 40%, var(--panel-2))` }} />
-                <span style={{ fontFamily: "var(--mono)", fontSize: 8, color: "var(--ink-4)" }}>{item.label}</span>
+              <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 10, height: 10, borderRadius: 3, background: `color-mix(in srgb, ${item.color} 40%, ${T.surfaceRaised})` }} />
+                <span style={{ fontFamily: T.sans, fontSize: 11, color: T.ink4 }}>{item.label}</span>
               </div>
             ))}
           </div>
@@ -427,22 +420,22 @@ export default function CoachCompliancePage() {
       </div>
 
       {/* Check-in summary */}
-      <div className="panel">
-        <div className="panel-head">
-          <span>Check-in summary</span>
-          <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ok)", textTransform: "uppercase", letterSpacing: "0.08em" }}>14-day streak · last 06:42 today</span>
+      <div style={{ background: T.surface, borderRadius: 12 }}>
+        <div style={{ padding: "16px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 600, color: T.ink }}>Check-in summary</span>
+          <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ok, fontWeight: 500 }}>14-day streak · last 06:42 today</span>
         </div>
-        <div style={{ padding: "20px 24px", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
+        <div style={{ padding: "24px", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
           {[
-            { label: "Subjective energy", value: "6/10", note: "Typical board-week level", color: "var(--warn)" },
-            { label: "Training RPE", value: "Rest", note: "Hold-intensity day", color: "var(--ink-3)" },
-            { label: "Mood", value: "7/10", note: "Slightly elevated stress", color: "var(--warn)" },
-            { label: "Gut / digestion", value: "Good", note: "No GI flags today", color: "var(--ok)" },
+            { label: "Subjective energy", value: "6/10", note: "Typical board-week level", color: T.warn },
+            { label: "Training RPE", value: "Rest", note: "Hold-intensity day", color: T.ink3 },
+            { label: "Mood", value: "7/10", note: "Slightly elevated stress", color: T.warn },
+            { label: "Gut / digestion", value: "Good", note: "No GI flags today", color: T.ok },
           ].map(item => (
-            <div key={item.label} style={{ padding: "14px 16px", border: "1px solid var(--hair)", background: "var(--panel-2)" }}>
-              <div style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-4)", marginBottom: 8 }}>{item.label}</div>
-              <div style={{ fontFamily: "var(--mono)", fontSize: 22, letterSpacing: "-0.03em", color: item.color, marginBottom: 4, lineHeight: 1 }}>{item.value}</div>
-              <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-4)" }}>{item.note}</div>
+            <div key={item.label} style={{ padding: "16px 18px", background: T.surfaceRaised, borderRadius: 10 }}>
+              <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink4, marginBottom: 10, fontWeight: 500 }}>{item.label}</div>
+              <div style={{ fontFamily: T.mono, fontSize: 22, letterSpacing: "-0.03em", color: item.color, marginBottom: 6, lineHeight: 1, fontWeight: 300 }}>{item.value}</div>
+              <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink4 }}>{item.note}</div>
             </div>
           ))}
         </div>
