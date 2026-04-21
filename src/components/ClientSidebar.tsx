@@ -18,7 +18,7 @@ const NAV: { key: string; icon: IconKey; label: string; href: string }[] = [
 export default function ClientSidebar() {
   const pathname = usePathname()
   const router   = useRouter()
-  const { setRole } = useApp()
+  const { setRole, theme, setTheme } = useApp()
 
   useEffect(() => { setRole("james") }, [setRole])
 
@@ -85,9 +85,18 @@ export default function ClientSidebar() {
             <span style={{ color: T.warn }}>64</span>
           </div>
           <div style={{ paddingTop: 10, borderTop: `1px solid ${T.border}`, marginTop: 8 }}>
-            <button onClick={() => router.push("/")} style={{ fontFamily: T.sans, fontSize: 11, color: T.ink4, cursor: "pointer" }}>
-              ← Switch product
-            </button>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <button onClick={() => router.push("/")} style={{ fontFamily: T.sans, fontSize: 11, color: T.ink4, cursor: "pointer" }}>
+                ← Switch product
+              </button>
+              <button
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                style={{ fontFamily: T.sans, fontSize: 11, color: T.ink4, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
+              >
+                {theme === "dark" ? "☀" : "◑"}
+              </button>
+            </div>
           </div>
         </div>
       </div>

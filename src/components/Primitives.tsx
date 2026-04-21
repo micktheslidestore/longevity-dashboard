@@ -3,28 +3,30 @@
 import { useState, useMemo } from "react"
 
 // ─── Design tokens (shared reference object) ─────────────────────────────────
+// All values are CSS custom property references — light/dark switching is
+// handled by [data-theme="light"] in globals.css + RoleContext setting the attr.
 export const T = {
-  bg:             "#121214",
-  surface:        "#1a1a1e",
-  surfaceRaised:  "#222226",
-  border:         "rgba(255,252,245,0.06)",
-  borderSubtle:   "rgba(255,252,245,0.03)",
-  borderMed:      "rgba(255,252,245,0.10)",
-  ink:            "#F2EFE8",
-  ink2:           "#B5B0A6",
-  ink3:           "#7D7972",
-  ink4:           "#4A4743",
-  ok:             "#7FA99B",
-  okSubtle:       "rgba(127,169,155,0.08)",
-  okMuted:        "rgba(127,169,155,0.15)",
-  warn:           "#C8A56A",
-  warnSubtle:     "rgba(200,165,106,0.06)",
-  warnMuted:      "rgba(200,165,106,0.12)",
-  alert:          "#C17A6A",
-  accent:         "#C8A56A",
-  serif:          "'Source Serif 4', Georgia, serif",
-  sans:           "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif",
-  mono:           "'IBM Plex Mono', ui-monospace, Menlo, monospace",
+  bg:             "var(--bg)",
+  surface:        "var(--surface)",
+  surfaceRaised:  "var(--surface-raised)",
+  border:         "var(--border)",
+  borderSubtle:   "var(--border-subtle)",
+  borderMed:      "var(--border-med)",
+  ink:            "var(--ink)",
+  ink2:           "var(--ink-2)",
+  ink3:           "var(--ink-3)",
+  ink4:           "var(--ink-4)",
+  ok:             "var(--ok)",
+  okSubtle:       "var(--ok-subtle)",
+  okMuted:        "var(--ok-muted)",
+  warn:           "var(--warn)",
+  warnSubtle:     "var(--warn-subtle)",
+  warnMuted:      "var(--warn-muted)",
+  alert:          "var(--alert)",
+  accent:         "var(--accent)",
+  serif:          "var(--serif)",
+  sans:           "var(--sans)",
+  mono:           "var(--mono)",
 }
 
 // ─── Lifecycle chip ───────────────────────────────────────────────────────────
@@ -120,10 +122,10 @@ export function ScoreRing({ score, size = 140 }: { score: number; size?: number 
   return (
     <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
       <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={T.border} strokeWidth={5} />
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={band.color} strokeWidth={5}
+        <circle cx={size/2} cy={size/2} r={r} style={{ fill: "none", stroke: T.border, strokeWidth: 5 }} />
+        <circle cx={size/2} cy={size/2} r={r}
           strokeDasharray={`${pct * circ} ${circ}`} strokeLinecap="round"
-          style={{ transition: "stroke-dasharray 1s ease" }} />
+          style={{ fill: "none", stroke: band.color, strokeWidth: 5, transition: "stroke-dasharray 1s ease" }} />
       </svg>
       <div style={{
         position: "absolute", inset: 0, display: "flex", flexDirection: "column",

@@ -27,7 +27,7 @@ const MOBILE_NAV = PRIMARY_NAV.slice(0, 5)
 export default function CoachSidebar() {
   const pathname = usePathname()
   const router   = useRouter()
-  const { setRole } = useApp()
+  const { setRole, theme, setTheme } = useApp()
 
   useEffect(() => { setRole("darcy") }, [setRole])
 
@@ -136,9 +136,18 @@ export default function CoachSidebar() {
             <span>Pending</span><span style={{ color: T.warn }}>3 drafts</span>
           </div>
           <div style={{ paddingTop: 10, borderTop: `1px solid ${T.border}`, marginTop: 8 }}>
-            <button onClick={() => router.push("/")} style={{ fontFamily: T.sans, fontSize: 11, color: T.ink4, cursor: "pointer" }}>
-              ← Switch product
-            </button>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <button onClick={() => router.push("/")} style={{ fontFamily: T.sans, fontSize: 11, color: T.ink4, cursor: "pointer" }}>
+                ← Switch product
+              </button>
+              <button
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                style={{ fontFamily: T.sans, fontSize: 11, color: T.ink4, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
+              >
+                {theme === "dark" ? "☀" : "◑"}
+              </button>
+            </div>
           </div>
         </div>
       </div>
