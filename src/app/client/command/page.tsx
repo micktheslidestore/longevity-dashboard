@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { DATA } from "@/data/james"
+import { T, LifecycleChip } from "@/components/Primitives"
 
 const { command } = DATA
 
@@ -76,58 +77,94 @@ function ClientAgentPanel() {
   }
 
   return (
-    <div className="panel">
-      <div className="panel-head">
+    <div style={{ background: T.surface, borderRadius: 12, overflow: "hidden", marginBottom: 56 }}>
+      {/* Header */}
+      <div style={{ padding: "18px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span>Your health assistant</span>
-          <span style={{ fontFamily: "var(--mono)", fontSize: 8, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.08em", border: "1px solid color-mix(in srgb, var(--accent) 40%, transparent)", padding: "2px 7px" }}>⬤ Online</span>
+          <span style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 500, color: T.ink }}>Your health assistant</span>
+          <span style={{
+            fontFamily: T.sans, fontSize: 11, color: T.ok, fontWeight: 500,
+            background: T.okSubtle, padding: "2px 8px", borderRadius: 20,
+            display: "inline-flex", alignItems: "center", gap: 4,
+          }}>
+            <span style={{ width: 5, height: 5, borderRadius: "50%", background: T.ok, display: "inline-block" }} />
+            Online
+          </span>
         </div>
-        <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)" }}>Ask anything about your data, training, or upcoming tests</span>
+        <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3 }}>Ask anything about your data, training, or upcoming tests</span>
       </div>
 
       {/* Quick actions */}
-      <div style={{ padding: "10px 20px", borderBottom: "1px solid var(--hair)", display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <div style={{ padding: "12px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", gap: 8, flexWrap: "wrap" }}>
         {QUICK_ACTIONS.map(qa => (
-          <button key={qa} onClick={() => send(qa)} style={{ fontFamily: "var(--mono)", fontSize: 9, letterSpacing: "0.06em", padding: "5px 12px", border: "1px solid var(--hair-strong)", color: "var(--ink-3)", background: "transparent", cursor: "pointer", textTransform: "uppercase" }}>
+          <button key={qa} onClick={() => send(qa)} style={{
+            fontFamily: T.sans, fontSize: 12, padding: "6px 14px",
+            border: `1px solid ${T.borderMed}`, borderRadius: 20,
+            color: T.ink2, background: "transparent", cursor: "pointer",
+            transition: "background 0.1s, color 0.1s",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = T.surfaceRaised; e.currentTarget.style.color = T.ink }}
+          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = T.ink2 }}
+          >
             {qa}
           </button>
         ))}
       </div>
 
       {/* Messages */}
-      <div style={{ height: 280, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
+      <div style={{ height: 300, overflowY: "auto", padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
         {messages.map((m, i) => (
-          <div key={i} style={{ display: "flex", flexDirection: m.role === "jamie" ? "row-reverse" : "row", gap: 10, alignItems: "flex-start" }}>
-            <div style={{ width: 26, height: 26, borderRadius: "50%", background: m.role === "agent" ? "var(--panel-2)" : "var(--accent)", border: `1px solid ${m.role === "agent" ? "var(--hair-strong)" : "var(--accent)"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "var(--mono)", fontSize: 8, color: m.role === "agent" ? "var(--accent)" : "var(--bg)", textTransform: "uppercase" }}>
+          <div key={i} style={{ display: "flex", flexDirection: m.role === "jamie" ? "row-reverse" : "row", gap: 12, alignItems: "flex-start" }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: "50%",
+              background: m.role === "agent" ? T.surfaceRaised : T.warn,
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+              fontFamily: T.sans, fontSize: 11, fontWeight: 600,
+              color: m.role === "agent" ? T.ink3 : T.bg,
+            }}>
               {m.role === "agent" ? "A" : "J"}
             </div>
-            <div style={{ maxWidth: "76%", background: m.role === "agent" ? "var(--panel-2)" : "color-mix(in srgb, var(--accent) 10%, var(--panel-2))", border: `1px solid ${m.role === "agent" ? "var(--hair)" : "color-mix(in srgb, var(--accent) 25%, transparent)"}`, padding: "10px 14px" }}>
-              <div style={{ fontFamily: "var(--mono)", fontSize: 8, color: m.role === "agent" ? "var(--accent)" : "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
+            <div style={{
+              maxWidth: "76%",
+              background: m.role === "agent" ? T.surfaceRaised : `rgba(200,165,106,0.10)`,
+              borderRadius: 10,
+              padding: "10px 14px",
+            }}>
+              <div style={{ fontFamily: T.sans, fontSize: 11, color: m.role === "agent" ? T.ink3 : T.warn, marginBottom: 5, fontWeight: 500 }}>
                 {m.role === "agent" ? "Assistant" : "Jamie"} · {m.time}
               </div>
-              <div style={{ fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.6, whiteSpace: "pre-line" }}>{m.text}</div>
+              <div style={{ fontSize: 13, color: T.ink2, lineHeight: 1.65, whiteSpace: "pre-line", fontFamily: T.sans }}>{m.text}</div>
             </div>
           </div>
         ))}
         {loading && (
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <div style={{ width: 26, height: 26, borderRadius: "50%", background: "var(--panel-2)", border: "1px solid var(--hair-strong)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--mono)", fontSize: 8, color: "var(--accent)" }}>A</div>
-            <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-4)", letterSpacing: "0.08em" }}>Thinking…</div>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <div style={{ width: 28, height: 28, borderRadius: "50%", background: T.surfaceRaised, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: T.sans, fontSize: 11, color: T.ink3 }}>A</div>
+            <div style={{ fontFamily: T.sans, fontSize: 13, color: T.ink4 }}>Thinking…</div>
           </div>
         )}
         <div ref={bottomRef} />
       </div>
 
       {/* Input */}
-      <div style={{ padding: "12px 20px", borderTop: "1px solid var(--hair)", display: "flex", gap: 10 }}>
+      <div style={{ padding: "14px 24px", borderTop: `1px solid ${T.border}`, display: "flex", gap: 10 }}>
         <input
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === "Enter" && send(input)}
           placeholder="Ask about your training, data, or upcoming tests…"
-          style={{ flex: 1, background: "var(--panel-2)", border: "1px solid var(--hair-strong)", padding: "9px 12px", fontFamily: "var(--mono)", fontSize: 11, color: "var(--ink)", letterSpacing: "0.02em" }}
+          style={{
+            flex: 1, background: T.surfaceRaised,
+            border: `1px solid ${T.borderMed}`, borderRadius: 8,
+            padding: "10px 14px", fontFamily: T.sans, fontSize: 13,
+            color: T.ink, outline: "none",
+          }}
         />
-        <button onClick={() => send(input)} style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.1em", border: "none", background: "var(--accent)", color: "var(--bg)", padding: "9px 18px", cursor: "pointer" }}>
+        <button onClick={() => send(input)} style={{
+          fontFamily: T.sans, fontSize: 13, fontWeight: 500,
+          border: "none", background: T.warn, color: T.bg,
+          padding: "10px 20px", borderRadius: 8, cursor: "pointer",
+        }}>
           Send
         </button>
       </div>
@@ -156,101 +193,128 @@ export default function ClientCommandPage() {
   }
 
   const sections = [
-    { key: "exercise", label: "Exercise & training" },
-    { key: "fuelling", label: "Fuelling & nutrition" },
+    { key: "exercise", label: "Exercise and training" },
+    { key: "fuelling", label: "Fuelling and nutrition" },
     { key: "lifestyle", label: "Lifestyle protocol" },
   ] as const
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: "24px 32px", maxWidth: 1100 }}>
+    <div style={{ padding: "48px 48px 80px", maxWidth: 960, margin: "0 auto" }}>
 
-      <div style={{ borderBottom: "1px solid var(--hair)", paddingBottom: 16 }}>
-        <div style={{ fontFamily: "var(--mono)", fontSize: 8.5, textTransform: "uppercase", letterSpacing: "0.14em", color: "var(--ink-3)", marginBottom: 6 }}>Your programme</div>
-        <h1 style={{ fontFamily: "var(--serif)", fontSize: 26, fontWeight: 400, color: "var(--ink)", margin: 0, letterSpacing: "-0.02em" }}>Q2 2026 · Jamie Garis</h1>
+      {/* Page header */}
+      <div style={{ marginBottom: 48 }}>
+        <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3, marginBottom: 8 }}>Your programme</div>
+        <h1 style={{ fontFamily: T.serif, fontSize: 32, fontWeight: 300, color: T.ink, margin: 0, letterSpacing: "-0.02em" }}>
+          Q2 2026 · Jamie Garis
+        </h1>
       </div>
 
-      {/* Agent first */}
+      {/* Agent panel */}
       <ClientAgentPanel />
 
       {/* Cycle — "you are here" */}
-      <div className="panel">
-        <div className="panel-head">
-          <span>Where you are · Q2 2026</span>
-          <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Quarterly cycle</span>
+      <div style={{ background: T.surface, borderRadius: 12, padding: "24px 28px", marginBottom: 56 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+          <span style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 500, color: T.ink }}>Where you are · Q2 2026</span>
+          <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3 }}>Quarterly cycle</span>
         </div>
-        <div style={{ padding: "22px 28px" }}>
-          {/* Track */}
-          <div style={{ display: "flex", alignItems: "flex-start", position: "relative" }}>
-            <div style={{ position: "absolute", top: 10, left: 10, right: 10, height: 1, background: "var(--hair-strong)", zIndex: 0 }} />
-            {phases.map((ph, i) => {
-              const color = ph.done ? "var(--ok)" : ph.upcoming ? "var(--warn)" : "var(--hair-strong)"
-              return (
-                <div key={ph.label} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 1 }}>
-                  <div style={{ width: 20, height: 20, borderRadius: "50%", background: ph.done ? "var(--ok)" : "var(--bg)", border: `2px solid ${color}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: ph.upcoming ? 2 : 8 }}>
-                    {ph.done && <span style={{ color: "var(--bg)", fontSize: 9, fontWeight: 700 }}>✓</span>}
-                    {ph.upcoming && !ph.done && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--warn)", display: "block" }} />}
-                  </div>
-                  {ph.upcoming && (
-                    <div style={{ fontFamily: "var(--mono)", fontSize: 7.5, color: "var(--warn)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4, background: "color-mix(in srgb, var(--warn) 12%, transparent)", padding: "1px 6px" }}>
-                      ▲ You are here
-                    </div>
-                  )}
-                  <div style={{ fontFamily: "var(--mono)", fontSize: 8.5, textTransform: "uppercase", letterSpacing: "0.06em", color: ph.upcoming ? "var(--ink)" : ph.done ? "var(--ok)" : "var(--ink-3)", textAlign: "center", lineHeight: 1.4, marginBottom: 2 }}>
-                    {ph.label}
-                  </div>
-                  <div style={{ fontFamily: "var(--mono)", fontSize: 8, color: ph.upcoming ? "var(--warn)" : "var(--ink-4)", textAlign: "center" }}>
-                    {ph.upcoming ? "▶ " : ""}{ph.date}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
 
-          {/* What's next */}
-          {upcomingIndex >= 0 && (
-            <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid var(--hair)", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
-              <div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 7.5, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-4)", marginBottom: 5 }}>Next action</div>
-                <div style={{ fontSize: 12, color: "var(--ink-2)", lineHeight: 1.5 }}>DEXA + VO₂max retest Wed 22 Apr — fast from 20:30 Tue night</div>
+        {/* Track */}
+        <div style={{ display: "flex", alignItems: "flex-start", position: "relative" }}>
+          <div style={{ position: "absolute", top: 10, left: 10, right: 10, height: 1, background: T.border, zIndex: 0 }} />
+          {phases.map((ph) => {
+            const color = ph.done ? T.ok : ph.upcoming ? T.warn : T.border
+            return (
+              <div key={ph.label} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 1 }}>
+                <div style={{
+                  width: 20, height: 20, borderRadius: "50%",
+                  background: ph.done ? T.ok : T.bg,
+                  border: `2px solid ${color}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  marginBottom: ph.upcoming ? 4 : 8,
+                }}>
+                  {ph.done && <span style={{ color: T.bg, fontSize: 9, fontWeight: 700 }}>✓</span>}
+                  {ph.upcoming && !ph.done && <span style={{ width: 6, height: 6, borderRadius: "50%", background: T.warn, display: "block" }} />}
+                </div>
+                {ph.upcoming && (
+                  <div style={{
+                    fontFamily: T.sans, fontSize: 10, color: T.warn, marginBottom: 4,
+                    background: T.warnSubtle, padding: "2px 8px", borderRadius: 20, fontWeight: 500,
+                  }}>
+                    You are here
+                  </div>
+                )}
+                <div style={{
+                  fontFamily: T.sans, fontSize: 11, fontWeight: ph.upcoming ? 500 : 400,
+                  color: ph.upcoming ? T.ink : ph.done ? T.ok : T.ink3,
+                  textAlign: "center", lineHeight: 1.4, marginBottom: 2,
+                }}>
+                  {ph.label}
+                </div>
+                <div style={{ fontFamily: T.mono, fontSize: 10, color: ph.upcoming ? T.warn : T.ink4, textAlign: "center" }}>
+                  {ph.date}
+                </div>
               </div>
-              <div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 7.5, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-4)", marginBottom: 5 }}>Where you are</div>
-                <div style={{ fontSize: 12, color: "var(--warn)", lineHeight: 1.5, fontFamily: "var(--mono)" }}>Phase 3 of 4 · Remeasurement week</div>
-              </div>
-              <div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 7.5, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-4)", marginBottom: 5 }}>What&apos;s next</div>
-                <div style={{ fontSize: 12, color: "var(--ink-2)", lineHeight: 1.5 }}>Strategy review session with Darcy, Tue 29 Apr — results interpreted, protocol updated</div>
-              </div>
-            </div>
-          )}
+            )
+          })}
         </div>
+
+        {/* What's next */}
+        {upcomingIndex >= 0 && (
+          <div style={{ marginTop: 24, paddingTop: 20, borderTop: `1px solid ${T.border}`, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 20 }}>
+            <div>
+              <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3, marginBottom: 6 }}>Next action</div>
+              <div style={{ fontSize: 13, color: T.ink2, lineHeight: 1.55, fontFamily: T.sans }}>DEXA + VO₂max retest Wed 22 Apr — fast from 20:30 Tue night</div>
+            </div>
+            <div>
+              <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3, marginBottom: 6 }}>Where you are</div>
+              <div style={{ fontFamily: T.mono, fontSize: 13, color: T.warn, lineHeight: 1.55 }}>Phase 3 of 4 · Remeasurement week</div>
+            </div>
+            <div>
+              <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3, marginBottom: 6 }}>What&apos;s next</div>
+              <div style={{ fontSize: 13, color: T.ink2, lineHeight: 1.55, fontFamily: T.sans }}>Strategy review session with Darcy, Tue 29 Apr — results interpreted, protocol updated</div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Checklist */}
-      <div className="panel">
-        <div className="panel-head">
-          <span>Your programme checklist</span>
-          <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Q2 2026</span>
+      <div style={{ background: T.surface, borderRadius: 12, overflow: "hidden", marginBottom: 56 }}>
+        <div style={{ padding: "20px 28px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 500, color: T.ink }}>Your programme checklist</span>
+          <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3 }}>Q2 2026</span>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
           {[
-            { title: "Programme goals", items: command.jtbd.clientProgramme, color: "var(--accent)" },
-            { title: "Daily habits", items: command.jtbd.clientDaily, color: "var(--accent)" },
+            { title: "Programme goals", items: command.jtbd.clientProgramme },
+            { title: "Daily habits", items: command.jtbd.clientDaily },
           ].map((col, ci) => {
             const done = col.items.filter(i => checked[i.id]).length
             return (
-              <div key={col.title} style={{ borderRight: ci === 0 ? "1px solid var(--hair)" : undefined, padding: "16px 20px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                  <div style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.1em", color: col.color }}>{col.title}</div>
-                  <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)" }}>{done}/{col.items.length}</div>
+              <div key={col.title} style={{
+                borderRight: ci === 0 ? `1px solid ${T.border}` : undefined,
+                padding: "20px 28px",
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+                  <div style={{ fontFamily: T.sans, fontSize: 12, fontWeight: 500, color: T.warn }}>{col.title}</div>
+                  <div style={{ fontFamily: T.mono, fontSize: 12, color: T.ink3 }}>{done}/{col.items.length}</div>
                 </div>
-                <div style={{ height: 2, background: "var(--hair-strong)", marginBottom: 14 }}>
-                  <div style={{ height: "100%", width: `${(done / col.items.length) * 100}%`, background: col.color }} />
+                <div style={{ height: 3, background: T.border, borderRadius: 2, marginBottom: 16 }}>
+                  <div style={{ height: "100%", width: `${(done / col.items.length) * 100}%`, background: T.warn, borderRadius: 2, transition: "width 0.3s" }} />
                 </div>
                 {col.items.map(item => (
-                  <label key={item.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 8, cursor: "pointer" }}>
-                    <input type="checkbox" checked={checked[item.id] ?? false} onChange={() => setChecked(p => ({ ...p, [item.id]: !p[item.id] }))} style={{ marginTop: 2, accentColor: col.color, flexShrink: 0 }} />
-                    <span style={{ fontSize: 12.5, color: checked[item.id] ? "var(--ink-3)" : "var(--ink)", lineHeight: 1.4, textDecoration: checked[item.id] ? "line-through" : "none" }}>{item.text}</span>
+                  <label key={item.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10, cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={checked[item.id] ?? false}
+                      onChange={() => setChecked(p => ({ ...p, [item.id]: !p[item.id] }))}
+                      style={{ marginTop: 3, accentColor: T.warn, flexShrink: 0 }}
+                    />
+                    <span style={{
+                      fontFamily: T.sans, fontSize: 13, lineHeight: 1.5,
+                      color: checked[item.id] ? T.ink3 : T.ink,
+                      textDecoration: checked[item.id] ? "line-through" : "none",
+                    }}>{item.text}</span>
                   </label>
                 ))}
               </div>
@@ -260,21 +324,29 @@ export default function ClientCommandPage() {
       </div>
 
       {/* Strategy (read-only) */}
-      <div className="panel">
-        <div className="panel-head">
-          <span>Your Q2 protocol</span>
-          <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Read-only · set by {command.quarterlyStrategy.lockedBy.split("·")[0].trim()}</span>
+      <div style={{ background: T.surface, borderRadius: 12, overflow: "hidden", marginBottom: 56 }}>
+        <div style={{ padding: "20px 28px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 500, color: T.ink }}>Your Q2 protocol</span>
+          <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3 }}>
+            Read-only · set by {command.quarterlyStrategy.lockedBy.split("·")[0].trim()}
+          </span>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
           {sections.map((sec, i) => (
-            <div key={sec.key} style={{ borderRight: i % 2 === 0 ? "1px solid var(--hair)" : undefined, borderTop: i >= 2 ? "1px solid var(--hair)" : undefined }}>
-              <div onClick={() => setOpenSec(openSec === sec.key ? null : sec.key)} style={{ padding: "14px 22px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-3)" }}>{sec.label}</div>
-                <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)" }}>{openSec === sec.key ? "▲" : "▼"}</span>
+            <div key={sec.key} style={{
+              borderRight: i % 2 === 0 ? `1px solid ${T.border}` : undefined,
+              borderTop: i >= 2 ? `1px solid ${T.border}` : undefined,
+            }}>
+              <div
+                onClick={() => setOpenSec(openSec === sec.key ? null : sec.key)}
+                style={{ padding: "16px 28px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
+              >
+                <div style={{ fontFamily: T.sans, fontSize: 13, color: T.ink2, fontWeight: 500 }}>{sec.label}</div>
+                <span style={{ fontFamily: T.mono, fontSize: 11, color: T.ink3 }}>{openSec === sec.key ? "▲" : "▼"}</span>
               </div>
               {openSec === sec.key && (
-                <div style={{ padding: "0 22px 18px" }}>
-                  <p style={{ fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.6, margin: 0 }}>{sectionValues[sec.key]}</p>
+                <div style={{ padding: "0 28px 20px" }}>
+                  <p style={{ fontFamily: T.sans, fontSize: 13, color: T.ink2, lineHeight: 1.65, margin: 0 }}>{sectionValues[sec.key]}</p>
                 </div>
               )}
             </div>
@@ -283,20 +355,24 @@ export default function ClientCommandPage() {
       </div>
 
       {/* Resolved interventions */}
-      <div className="panel">
-        <div className="panel-head">
-          <span>Resolved interventions</span>
-          <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ok)", textTransform: "uppercase", letterSpacing: "0.08em" }}>{DATA.courseCorrector.filter(c => c.status === "resolved").length} resolved this quarter</span>
+      <div style={{ background: T.surface, borderRadius: 12, overflow: "hidden" }}>
+        <div style={{ padding: "20px 28px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 500, color: T.ink }}>Resolved interventions</span>
+          <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ok }}>
+            {DATA.courseCorrector.filter(c => c.status === "resolved").length} resolved this quarter
+          </span>
         </div>
         {DATA.courseCorrector.filter(c => c.status === "resolved").map((c, i) => (
-          <div key={i} style={{ padding: "14px 20px", borderTop: "1px solid var(--hair)" }}>
-            <div style={{ display: "flex", gap: 12, alignItems: "baseline", marginBottom: 6 }}>
-              <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ok)", textTransform: "uppercase" }}>✓ Resolved</span>
-              <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)" }}>{c.date}</span>
+          <div key={i} style={{ padding: "18px 28px", borderTop: `1px solid ${T.border}` }}>
+            <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 8 }}>
+              <LifecycleChip status="resolved" />
+              <span style={{ fontFamily: T.mono, fontSize: 11, color: T.ink3 }}>{c.date}</span>
             </div>
-            <div style={{ fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.5, marginBottom: 4 }}>{c.outcome}</div>
+            <div style={{ fontFamily: T.sans, fontSize: 13, color: T.ink2, lineHeight: 1.55, marginBottom: 6 }}>{c.outcome}</div>
             {c.impact.after !== null && (
-              <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ok)" }}>{c.impact.metric}: {c.impact.before} → {c.impact.after} {c.impact.unit} in {c.impact.days} days</div>
+              <div style={{ fontFamily: T.mono, fontSize: 11, color: T.ok }}>
+                {c.impact.metric}: {c.impact.before} → {c.impact.after} {c.impact.unit} in {c.impact.days} days
+              </div>
             )}
           </div>
         ))}
