@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react"
 import { DATA } from "@/data/james"
 import { useApp } from "@/components/RoleContext"
-import { LifecycleChip } from "@/components/Primitives"
+import { T, LifecycleChip } from "@/components/Primitives"
 import HeroChart from "@/components/HeroChart"
 import WhatIf from "@/components/WhatIf"
 import { computeSeries, lagCorrelations, WEIGHTS, type MetricKey } from "@/lib/irt"
@@ -22,8 +22,8 @@ function corrColor(r: number): string {
 }
 
 function corrTextColor(r: number, abs: number): string {
-  if (abs >= 0.6) return r > 0 ? "var(--warn)" : "var(--ok)"
-  return "var(--ink-2)"
+  if (abs >= 0.6) return r > 0 ? T.warn : T.ok
+  return T.ink2
 }
 
 function top3Pairs(matrix: number[][], labels: string[]) {
@@ -48,7 +48,13 @@ type ChartType = typeof CHART_TYPES[number]
 
 // ─── sub-components ──────────────────────────────────────────────────────────
 
-const OVERLAY_COLORS = ["var(--ok)", "#C8A56A", "#9B8FA9"] as const
+const OVERLAY_COLORS = [T.ok, "#C8A56A", "#9B8FA9"] as const
+
+const tooltipStyle = {
+  contentStyle: { background: T.surfaceRaised, border: `1px solid ${T.borderMed}`, borderRadius: 8, fontFamily: T.sans, fontSize: 11 },
+  itemStyle: { color: T.ink },
+  labelStyle: { color: T.ink3 },
+}
 
 function ChartPanel({
   card,
@@ -71,62 +77,65 @@ function ChartPanel({
     return d
   })
 
-  const tooltipStyle = {
-    contentStyle: { background: "var(--panel-2)", border: "1px solid var(--hair-strong)", borderRadius: 0, fontFamily: "var(--mono)", fontSize: 10 },
-    itemStyle: { color: "var(--ink)" },
-    labelStyle: { color: "var(--ink-3)" },
-  }
-
   return (
     <div style={{ height: 180 }}>
       <ResponsiveContainer width="100%" height="100%">
         {type === "line" ? (
           <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-            <CartesianGrid stroke="var(--hair)" vertical={false} />
-            <XAxis dataKey="day" tick={{ fontFamily: "var(--mono)", fontSize: 9, fill: "var(--ink-3)" }} tickLine={false} axisLine={false} />
-            <YAxis yAxisId="left" tick={{ fontFamily: "var(--mono)", fontSize: 9, fill: "var(--ink-3)" }} tickLine={false} axisLine={false} domain={["auto", "auto"]} />
-            {hasOverlays && <YAxis yAxisId="right" orientation="right" tick={{ fontFamily: "var(--mono)", fontSize: 9, fill: "var(--ink-3)" }} tickLine={false} axisLine={false} domain={["auto", "auto"]} />}
+            <CartesianGrid stroke={T.border} vertical={false} />
+            <XAxis dataKey="day" tick={{ fontFamily: T.sans, fontSize: 10, fill: T.ink3 }} tickLine={false} axisLine={false} />
+            <YAxis yAxisId="left" tick={{ fontFamily: T.sans, fontSize: 10, fill: T.ink3 }} tickLine={false} axisLine={false} domain={["auto", "auto"]} />
+            {hasOverlays && <YAxis yAxisId="right" orientation="right" tick={{ fontFamily: T.sans, fontSize: 10, fill: T.ink3 }} tickLine={false} axisLine={false} domain={["auto", "auto"]} />}
             <Tooltip {...tooltipStyle} />
-            {/* Life events */}
             {events.map(ev => (
-              <ReferenceLine key={`ev-${ev.day}`} x={ev.day} yAxisId="left" stroke="var(--ink-3)" strokeDasharray="2 4" strokeWidth={1}
-                label={{ value: ev.lbl, position: "insideTopLeft", fontSize: 7, fill: "var(--ink-3)", fontFamily: "var(--mono)" }} />
+              <ReferenceLine key={`ev-${ev.day}`} x={ev.day} yAxisId="left" stroke={T.ink3} strokeDasharray="2 4" strokeWidth={1}
+                label={{ value: ev.lbl, position: "insideTopLeft", fontSize: 9, fill: T.ink3, fontFamily: T.sans }} />
             ))}
-            {/* Protocol regime change annotations */}
             {regimeChanges?.map(rc => (
               <ReferenceLine key={`rc-${rc.dayIndex}`} x={rc.dayIndex + 1} yAxisId="left"
                 stroke={rc.color} strokeDasharray="1 2" strokeWidth={2}
-                label={{ value: `▲ ${rc.label}`, position: "insideTopRight", fontSize: 7, fill: rc.color, fontFamily: "var(--mono)" }} />
+                label={{ value: `▲ ${rc.label}`, position: "insideTopRight", fontSize: 9, fill: rc.color, fontFamily: T.sans }} />
             ))}
             {card.band && <>
-              <ReferenceLine y={card.band[0]} yAxisId="left" stroke="var(--hair-strong)" strokeDasharray="3 3" />
-              <ReferenceLine y={card.band[1]} yAxisId="left" stroke="var(--hair-strong)" strokeDasharray="3 3" />
+              <ReferenceLine y={card.band[0]} yAxisId="left" stroke={T.border} strokeDasharray="3 3" />
+              <ReferenceLine y={card.band[1]} yAxisId="left" stroke={T.border} strokeDasharray="3 3" />
             </>}
-            <Line yAxisId="left" type="monotone" dataKey="primary" stroke="var(--accent)" strokeWidth={1.5} dot={false} name={card.name} />
+            <Line yAxisId="left" type="monotone" dataKey="primary" stroke={T.accent} strokeWidth={1.5} dot={false} name={card.name} />
             {overlayCards?.map((oc, idx) => (
               <Line key={oc.name} yAxisId="right" type="monotone" dataKey={`ov${idx}`}
                 stroke={OVERLAY_COLORS[idx % OVERLAY_COLORS.length]} strokeWidth={1.5}
                 dot={false} strokeDasharray="4 2" name={oc.name} />
             ))}
-            {hasOverlays && <Legend wrapperStyle={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)" }} />}
+            {hasOverlays && <Legend wrapperStyle={{ fontFamily: T.sans, fontSize: 11, color: T.ink3 }} />}
           </LineChart>
         ) : (
           <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-            <CartesianGrid stroke="var(--hair)" vertical={false} />
-            <XAxis dataKey="day" tick={{ fontFamily: "var(--mono)", fontSize: 9, fill: "var(--ink-3)" }} tickLine={false} axisLine={false} />
-            <YAxis tick={{ fontFamily: "var(--mono)", fontSize: 9, fill: "var(--ink-3)" }} tickLine={false} axisLine={false} domain={["auto", "auto"]} />
+            <CartesianGrid stroke={T.border} vertical={false} />
+            <XAxis dataKey="day" tick={{ fontFamily: T.sans, fontSize: 10, fill: T.ink3 }} tickLine={false} axisLine={false} />
+            <YAxis tick={{ fontFamily: T.sans, fontSize: 10, fill: T.ink3 }} tickLine={false} axisLine={false} domain={["auto", "auto"]} />
             <Tooltip {...tooltipStyle} />
             {events.map(ev => (
-              <ReferenceLine key={`ev-${ev.day}`} x={ev.day} stroke="var(--ink-3)" strokeDasharray="2 4" strokeWidth={1} />
+              <ReferenceLine key={`ev-${ev.day}`} x={ev.day} stroke={T.ink3} strokeDasharray="2 4" strokeWidth={1} />
             ))}
             {regimeChanges?.map(rc => (
               <ReferenceLine key={`rc-${rc.dayIndex}`} x={rc.dayIndex + 1}
                 stroke={rc.color} strokeDasharray="1 2" strokeWidth={2} />
             ))}
-            <Bar dataKey="primary" fill="var(--accent)" opacity={0.75} radius={0} name={card.name} />
+            <Bar dataKey="primary" fill={T.accent} opacity={0.75} radius={2} name={card.name} />
           </BarChart>
         )}
       </ResponsiveContainer>
+    </div>
+  )
+}
+
+// ─── Section header helper ────────────────────────────────────────────────────
+
+function SectionHeader({ title, sub }: { title: string; sub?: string }) {
+  return (
+    <div style={{ padding: "20px 28px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <span style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 500, color: T.ink }}>{title}</span>
+      {sub && <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3 }}>{sub}</span>}
     </div>
   )
 }
@@ -149,7 +158,7 @@ export default function TrendsPage() {
   // Insight feed
   const [openInsight, setOpenInsight] = useState<string | null>(null)
 
-  // Correlation matrix selection
+  // Correlation matrix
   const [selectedPair, setSelectedPair] = useState<{ i: number; j: number } | null>({ i: 0, j: 1 })
   const top3 = useMemo(() => top3Pairs(corr.matrix, corr.labels), [])
 
@@ -173,12 +182,6 @@ export default function TrendsPage() {
   const [selectedPivotCell, setSelectedPivotCell] = useState<[number, number] | null>(null)
   const pivotCard = cards.find(c => c.name === pivotCardName) ?? cards[0]
 
-  // Build dynamic 4-week Mon–Sun grid from 30-day series
-  // data[0]=Sat Mar 21 … data[29]=Sun Apr 19
-  // W-4: Mon Mar 23=idx2 … Sun Mar 29=idx8
-  // W-3: Mon Mar 30=idx9 … Sun Apr 5=idx15
-  // W-2: Mon Apr 6=idx16 … Sun Apr 12=idx22
-  // W-1: Mon Apr 13=idx23 … Sun Apr 19=idx29
   const PIVOT_ROWS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
   const PIVOT_WEEKS = ["W-4", "W-3", "W-2", "W-1"]
   const pivotValues: number[][] = PIVOT_ROWS.map((_, di) =>
@@ -223,63 +226,77 @@ export default function TrendsPage() {
     setPinned(p => [...p, { id: `p${Date.now()}`, title, metrics, pinnedBy: "Darcy · now" }])
   }
 
-  // Pivot table — heat map by day of week
+  const selectStyle = {
+    background: T.surfaceRaised, border: `1px solid ${T.borderMed}`,
+    borderRadius: 6, color: T.ink, fontFamily: T.sans, fontSize: 12,
+    padding: "4px 8px", marginLeft: 8, cursor: "pointer",
+  }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: "24px 32px", maxWidth: 1300 }}>
+    <div style={{ padding: "48px 48px 80px", maxWidth: 960, margin: "0 auto" }}>
 
-      {/* Period toggle */}
-      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-        <span style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--ink-3)" }}>Period</span>
-        <div className="segmented">
-          {DATA.trends.periods.map(p => (
-            <button key={p} data-active={period === p} onClick={() => setPeriod(p)}>{p}</button>
-          ))}
+      {/* Page header + period toggle */}
+      <div style={{ marginBottom: 48, display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+        <div>
+          <h1 style={{ fontFamily: T.serif, fontSize: 32, fontWeight: 300, color: T.ink, margin: "0 0 8px", letterSpacing: "-0.02em" }}>Trends</h1>
+          <div style={{ fontFamily: T.sans, fontSize: 13, color: T.ink3 }}>30-day biomarker and recovery history</div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3 }}>Period</span>
+          <div style={{ display: "flex", gap: 4, background: T.surface, borderRadius: 8, padding: 4 }}>
+            {DATA.trends.periods.map(p => (
+              <button key={p} onClick={() => setPeriod(p)} style={{
+                fontFamily: T.sans, fontSize: 12, padding: "5px 12px", borderRadius: 6,
+                border: "none", cursor: "pointer",
+                background: period === p ? T.surfaceRaised : "transparent",
+                color: period === p ? T.ink : T.ink3,
+                fontWeight: period === p ? 500 : 400,
+              }}>{p}</button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* ── Z-score scorecard ───────────────────────────────────────────── */}
-      <div className="panel">
-        <div className="panel-head">
-          <span>Biomarker Z-scores · today vs 21-day baseline</span>
+      {/* Z-score scorecard */}
+      <div style={{ background: T.surface, borderRadius: 12, overflow: "hidden", marginBottom: 56 }}>
+        <div style={{ padding: "20px 28px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 500, color: T.ink }}>Biomarker Z-scores · today vs 21-day baseline</span>
           <button
-            title="Z-score measures how far today's reading is from your personal 21-day rolling mean, in standard deviations. Positive = elevated burden. Calculated using IRT discrimination weights — each biomarker is weighted by its clinical evidence for loading onto the Allostatic Load factor."
-            style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", background: "transparent", border: "1px solid var(--hair-strong)", padding: "2px 8px", cursor: "pointer", letterSpacing: "0.06em" }}
+            title="Z-score measures how far today's reading is from your personal 21-day rolling mean, in standard deviations."
+            style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3, background: T.surfaceRaised, border: `1px solid ${T.borderMed}`, borderRadius: 6, padding: "4px 10px", cursor: "pointer" }}
           >
-            (i) What is a Z-score?
+            What is a Z-score?
           </button>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 0 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", padding: "4px 0" }}>
           {(Object.keys(WEIGHTS) as MetricKey[]).map((k, idx) => {
             const z = lastDay.z[k]
             const raw = lastDay.raw[k as keyof typeof lastDay.raw] as number
-            const color = z > 1.2 ? "var(--alert)" : z > 0.5 ? "var(--warn)" : z < -0.5 ? "var(--ok)" : "var(--ink-2)"
+            const color = z > 1.2 ? T.alert : z > 0.5 ? T.warn : z < -0.5 ? T.ok : T.ink2
             const barW = Math.abs(z) / 3 * 100
             const isPositive = z >= 0
             return (
               <div key={k} style={{
-                padding: "14px 16px",
-                borderRight: idx % 6 !== 5 ? "1px solid var(--hair)" : undefined,
-                borderTop: idx >= 6 ? "1px solid var(--hair)" : undefined,
+                padding: "16px 18px",
+                borderRight: idx % 6 !== 5 ? `1px solid ${T.border}` : undefined,
+                borderTop: idx >= 6 ? `1px solid ${T.border}` : undefined,
               }}>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 8, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
+                <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3, marginBottom: 6 }}>
                   {WEIGHTS[k].label}
                 </div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 20, letterSpacing: "-0.03em", color, lineHeight: 1, marginBottom: 2 }}>
+                <div style={{ fontFamily: T.mono, fontSize: 20, fontWeight: 300, letterSpacing: "-0.03em", color, lineHeight: 1, marginBottom: 3 }}>
                   {z > 0 ? "+" : ""}{z.toFixed(2)}σ
                 </div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-4)", marginBottom: 8 }}>
+                <div style={{ fontFamily: T.mono, fontSize: 10, color: T.ink4, marginBottom: 10 }}>
                   {raw.toFixed(1)} {WEIGHTS[k].unit}
                 </div>
-                <div style={{ height: 3, background: "var(--hair-strong)", position: "relative" }}>
+                <div style={{ height: 3, background: T.border, borderRadius: 2, position: "relative" }}>
                   <div style={{
-                    position: "absolute",
-                    height: "100%",
-                    width: `${barW}%`,
-                    background: color,
+                    position: "absolute", height: "100%",
+                    width: `${barW}%`, background: color, borderRadius: 2,
                     left: isPositive ? "50%" : `${50 - barW}%`,
                   }} />
-                  <div style={{ position: "absolute", left: "50%", top: -2, width: 1, height: 7, background: "var(--ink-3)" }} />
+                  <div style={{ position: "absolute", left: "50%", top: -2, width: 1, height: 7, background: T.ink3 }} />
                 </div>
               </div>
             )
@@ -287,114 +304,110 @@ export default function TrendsPage() {
         </div>
       </div>
 
-      {/* ── Hero chart (IRT AL score + biomarker overlays) ──────────────── */}
-      <HeroChart computed={computed} eventMarkers={DATA.checkin.regimeChanges.map(rc => ({ dayIndex: rc.dayIndex, label: rc.label, color: rc.color }))} />
+      {/* Hero chart */}
+      <div style={{ marginBottom: 56 }}>
+        <HeroChart computed={computed} eventMarkers={DATA.checkin.regimeChanges.map(rc => ({ dayIndex: rc.dayIndex, label: rc.label, color: rc.color }))} />
+      </div>
 
-      {/* ── What-if simulation ──────────────────────────────────────────── */}
-      <WhatIf currentZ={lastDay.z} currentAL={lastDay.alScore} />
+      {/* What-if simulation */}
+      <div style={{ marginBottom: 56 }}>
+        <WhatIf currentZ={lastDay.z} currentAL={lastDay.alScore} />
+      </div>
 
-      {/* ── Lag correlation engine ───────────────────────────────────────── */}
-      <div className="panel">
-        <div className="panel-head">
-          <span>Lag cross-correlation · intervention response</span>
-          <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-            Days until each biomarker responds to a protocol event
-          </span>
-        </div>
-        <div style={{ padding: "16px 20px", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12 }}>
+      {/* Lag correlation */}
+      <div style={{ background: T.surface, borderRadius: 12, overflow: "hidden", marginBottom: 56 }}>
+        <SectionHeader title="Lag cross-correlation · intervention response" sub="Days until each biomarker responds to a protocol event" />
+        <div style={{ padding: "20px 28px", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 16 }}>
           {lagResults
             .filter(lr => Math.abs(lr.peakR) > 0.05)
             .sort((a, b) => Math.abs(b.peakR) - Math.abs(a.peakR))
             .slice(0, 10)
             .map(lr => (
-              <div key={lr.key} style={{ borderLeft: `2px solid ${Math.abs(lr.peakR) > 0.3 ? "var(--warn)" : "var(--hair-strong)"}`, paddingLeft: 10 }}>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--ink-3)", marginBottom: 3 }}>
+              <div key={lr.key} style={{ borderLeft: `2px solid ${Math.abs(lr.peakR) > 0.3 ? T.warn : T.border}`, paddingLeft: 12 }}>
+                <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3, marginBottom: 4 }}>
                   {lr.label}
                 </div>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-                  <span style={{ fontFamily: "var(--mono)", fontSize: 16, color: Math.abs(lr.peakR) > 0.3 ? "var(--warn)" : "var(--ink-2)", letterSpacing: "-0.02em" }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                  <span style={{ fontFamily: T.mono, fontSize: 18, fontWeight: 300, color: Math.abs(lr.peakR) > 0.3 ? T.warn : T.ink2, letterSpacing: "-0.02em" }}>
                     {lr.peakLag}d
                   </span>
-                  <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)" }}>
+                  <span style={{ fontFamily: T.mono, fontSize: 10, color: T.ink3 }}>
                     r={lr.peakR > 0 ? "+" : ""}{lr.peakR.toFixed(2)}
                   </span>
                 </div>
-                <div style={{ display: "flex", gap: 2, marginTop: 6 }}>
+                <div style={{ display: "flex", gap: 2, marginTop: 8 }}>
                   {lr.lags.map((r, i) => (
                     <div
                       key={i}
                       title={`Lag ${i}d: r=${r.toFixed(2)}`}
                       style={{
-                        width: 10, height: Math.abs(r) * 24,
-                        background: i === lr.peakLag ? "var(--warn)" : "var(--hair-strong)",
-                        alignSelf: "flex-end",
-                        minHeight: 2,
+                        width: 10, height: Math.abs(r) * 24, borderRadius: 1,
+                        background: i === lr.peakLag ? T.warn : T.border,
+                        alignSelf: "flex-end", minHeight: 2,
                       }}
                     />
                   ))}
                 </div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 7, color: "var(--ink-4)", marginTop: 3, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  lag 0 ──────── 7d
+                <div style={{ fontFamily: T.sans, fontSize: 10, color: T.ink4, marginTop: 4 }}>
+                  lag 0 — 7d
                 </div>
               </div>
             ))}
         </div>
       </div>
 
-      {/* ── Pivot chart with overlay ─────────────────────────────────────── */}
-      <div className="panel">
-        <div className="pivot-head">
-          <span style={{ fontFamily: "var(--mono)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-2)" }}>
-            Trend explorer
-          </span>
-          <div className="pivot-controls">
-            <label>
+      {/* Trend explorer */}
+      <div style={{ background: T.surface, borderRadius: 12, overflow: "hidden", marginBottom: 56 }}>
+        <div style={{ padding: "20px 28px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+          <span style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 500, color: T.ink }}>Trend explorer</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <label style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3, display: "flex", alignItems: "center" }}>
               Metric
-              <select value={pivotMetric} onChange={e => { setPivotMetric(e.target.value); setOverlayMetrics([]) }}>
+              <select value={pivotMetric} onChange={e => { setPivotMetric(e.target.value); setOverlayMetrics([]) }} style={selectStyle}>
                 {cards.map(c => <option key={c.name}>{c.name}</option>)}
               </select>
             </label>
-            <label>
-              Chart
-              <div className="seg-mini" style={{ display: "inline-flex", marginLeft: 8 }}>
-                {CHART_TYPES.map(t => (
-                  <button key={t} data-on={chartType === t} onClick={() => setChartType(t)}>{t}</button>
-                ))}
-              </div>
-            </label>
+            <div style={{ display: "flex", gap: 4, background: T.surfaceRaised, borderRadius: 6, padding: 3 }}>
+              {CHART_TYPES.map(t => (
+                <button key={t} onClick={() => setChartType(t)} style={{
+                  fontFamily: T.sans, fontSize: 11, padding: "4px 10px", borderRadius: 4,
+                  border: "none", cursor: "pointer",
+                  background: chartType === t ? T.surface : "transparent",
+                  color: chartType === t ? T.ink : T.ink3,
+                  fontWeight: chartType === t ? 500 : 400,
+                }}>{t}</button>
+              ))}
+            </div>
             <button
               onClick={pinCurrentView}
               disabled={pinned.length >= 3}
-              style={{ fontFamily: "var(--mono)", fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", border: "1px solid var(--hair-strong)", padding: "5px 10px", color: pinned.length >= 3 ? "var(--ink-3)" : "var(--ink-2)", background: "transparent", cursor: pinned.length >= 3 ? "not-allowed" : "pointer" }}
+              style={{ fontFamily: T.sans, fontSize: 12, border: `1px solid ${T.borderMed}`, borderRadius: 6, padding: "5px 12px", color: pinned.length >= 3 ? T.ink3 : T.ink2, background: "transparent", cursor: pinned.length >= 3 ? "not-allowed" : "pointer" }}
             >
               {pinned.length >= 3 ? "3 pinned (max)" : "Pin view"}
             </button>
           </div>
         </div>
 
-        {/* Multi-metric overlay selector */}
-        <div style={{ padding: "10px 20px 0", borderTop: "1px solid var(--hair)" }}>
-          <div style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-3)", marginBottom: 6 }}>
-            Overlay metrics · up to 3
-          </div>
+        {/* Overlay selector */}
+        <div style={{ padding: "14px 28px", borderBottom: `1px solid ${T.border}` }}>
+          <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3, marginBottom: 8 }}>Overlay metrics — up to 3</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {cards.filter(c => c.name !== pivotMetric).map((c, idx) => {
+            {cards.filter(c => c.name !== pivotMetric).map((c) => {
               const active = overlayMetrics.includes(c.name)
               const colorIdx = overlayMetrics.indexOf(c.name)
-              const color = active ? OVERLAY_COLORS[colorIdx] : "var(--ink-3)"
+              const color = active ? OVERLAY_COLORS[colorIdx] : T.ink3
               const disabled = !active && overlayMetrics.length >= 3
               return (
                 <button
                   key={c.name}
                   onClick={() => !disabled && toggleOverlay(c.name)}
                   style={{
-                    fontFamily: "var(--mono)", fontSize: 9, letterSpacing: "0.06em",
-                    padding: "3px 8px",
-                    border: `1px solid ${active ? color : "var(--hair-strong)"}`,
+                    fontFamily: T.sans, fontSize: 11, padding: "4px 12px",
+                    border: `1px solid ${active ? color : T.borderMed}`,
+                    borderRadius: 20,
                     background: active ? `${color}18` : "transparent",
-                    color: disabled ? "var(--ink-4)" : color,
+                    color: disabled ? T.ink4 : color,
                     cursor: disabled ? "not-allowed" : "pointer",
-                    textTransform: "uppercase",
                   }}
                 >
                   {active && <span style={{ marginRight: 4 }}>●</span>}
@@ -405,63 +418,56 @@ export default function TrendsPage() {
           </div>
         </div>
 
-        <div style={{ padding: "0 20px 20px" }}>
-          <div style={{ display: "flex", gap: 24, marginBottom: 12, paddingTop: 12, flexWrap: "wrap" }}>
+        <div style={{ padding: "20px 28px" }}>
+          <div style={{ display: "flex", gap: 28, marginBottom: 16, flexWrap: "wrap" }}>
             <div>
-              <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Current</div>
-              <div style={{ fontFamily: "var(--mono)", fontSize: 20, letterSpacing: "-0.02em", color: "var(--ink)", marginTop: 2 }}>
-                {activeCard.now} <span style={{ fontSize: 10, color: "var(--ink-3)" }}>{activeCard.unit}</span>
+              <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3, marginBottom: 4 }}>Current</div>
+              <div style={{ fontFamily: T.mono, fontSize: 22, fontWeight: 300, letterSpacing: "-0.02em", color: T.ink }}>
+                {activeCard.now} <span style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3 }}>{activeCard.unit}</span>
               </div>
             </div>
             <div>
-              <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Delta</div>
-              <div style={{ fontFamily: "var(--mono)", fontSize: 14, color: "var(--ink-2)", marginTop: 2 }}>{activeCard.delta}</div>
+              <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3, marginBottom: 4 }}>Delta</div>
+              <div style={{ fontFamily: T.mono, fontSize: 15, color: T.ink2 }}>{activeCard.delta}</div>
             </div>
             {overlayCards.map((oc, idx) => (
               <div key={oc.name}>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                  Overlay {idx + 1}
-                </div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 14, color: OVERLAY_COLORS[idx], marginTop: 2 }}>
-                  {oc.now} <span style={{ fontSize: 10, color: "var(--ink-3)" }}>{oc.unit}</span>
+                <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3, marginBottom: 4 }}>Overlay {idx + 1}</div>
+                <div style={{ fontFamily: T.mono, fontSize: 15, color: OVERLAY_COLORS[idx] }}>
+                  {oc.now} <span style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3 }}>{oc.unit}</span>
                 </div>
               </div>
             ))}
             <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Agent note</div>
-              <div style={{ fontSize: 12, color: "var(--ink-2)", lineHeight: 1.5, marginTop: 2, fontStyle: "italic" }}>{activeCard.note}</div>
+              <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3, marginBottom: 4 }}>Note</div>
+              <div style={{ fontFamily: T.sans, fontSize: 13, color: T.ink2, lineHeight: 1.55, fontStyle: "italic" }}>{activeCard.note}</div>
             </div>
           </div>
           <ChartPanel card={activeCard} events={events} regimeChanges={DATA.checkin.regimeChanges} type={chartType} overlayCards={overlayCards.length ? overlayCards : undefined} />
         </div>
       </div>
 
-      {/* ── Pinned views (Darcy) ─────────────────────────────────────────── */}
+      {/* Pinned views — coach only */}
       {role === "darcy" && pinned.length > 0 && (
-        <div className="panel">
-          <div className="panel-head">
-            <span>Pinned views</span>
-            <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-              {pinned.length}/3 · Darcy&apos;s saved chart configurations
-            </span>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: `repeat(${pinned.length}, 1fr)`, borderLeft: "1px solid var(--hair)" }}>
+        <div style={{ background: T.surface, borderRadius: 12, overflow: "hidden", marginBottom: 56 }}>
+          <SectionHeader title="Pinned views" sub={`${pinned.length}/3 · Darcy's saved configurations`} />
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(${pinned.length}, 1fr)`, borderLeft: `1px solid ${T.border}` }}>
             {pinned.map(pv => {
               const pc = cards.find(c => c.name === pv.metrics[0]) ?? cards[0]
               const pinnedOverlays = pv.metrics.slice(1).map(m => cards.find(c => c.name === m)).filter(Boolean) as typeof cards
               return (
-                <div key={pv.id} style={{ borderRight: "1px solid var(--hair)", padding: "14px 16px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-                    <div style={{ fontFamily: "var(--mono)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--ink-2)" }}>{pv.title}</div>
+                <div key={pv.id} style={{ borderRight: `1px solid ${T.border}`, padding: "16px 20px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
+                    <div style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 500, color: T.ink2 }}>{pv.title}</div>
                     <button
                       onClick={() => setPinned(p => p.filter(x => x.id !== pv.id))}
-                      style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", background: "transparent", border: "none", cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.06em" }}
+                      style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3, background: "transparent", border: "none", cursor: "pointer" }}
                     >
                       Unpin
                     </button>
                   </div>
                   <ChartPanel card={pc} events={events} type="line" overlayCards={pinnedOverlays.length ? pinnedOverlays : undefined} />
-                  <div style={{ marginTop: 6, fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{pv.pinnedBy}</div>
+                  <div style={{ marginTop: 8, fontFamily: T.sans, fontSize: 11, color: T.ink3 }}>{pv.pinnedBy}</div>
                 </div>
               )
             })}
@@ -469,23 +475,21 @@ export default function TrendsPage() {
         </div>
       )}
 
-      {/* ── Pivot deep dive ──────────────────────────────────────────────── */}
-      <div className="panel">
-        <div className="pivot-head">
+      {/* Pivot deep dive */}
+      <div style={{ background: T.surface, borderRadius: 12, overflow: "hidden", marginBottom: 56 }}>
+        <div style={{ padding: "20px 28px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <span style={{ fontFamily: "var(--mono)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-2)" }}>Pivot · day-of-week deep dive</span>
-            <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", marginTop: 3 }}>
+            <span style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 500, color: T.ink }}>Pivot · day-of-week deep dive</span>
+            <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3, marginTop: 3 }}>
               4 complete weeks · Mon–Sun · heat = relative value · click any cell to inspect
             </div>
           </div>
-          <div className="pivot-controls">
-            <label>
-              Metric
-              <select value={pivotCardName} onChange={e => { setPivotCardName(e.target.value); setSelectedPivotCell(null) }}>
-                {cards.map(c => <option key={c.name}>{c.name}</option>)}
-              </select>
-            </label>
-          </div>
+          <label style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3, display: "flex", alignItems: "center" }}>
+            Metric
+            <select value={pivotCardName} onChange={e => { setPivotCardName(e.target.value); setSelectedPivotCell(null) }} style={selectStyle}>
+              {cards.map(c => <option key={c.name}>{c.name}</option>)}
+            </select>
+          </label>
         </div>
 
         {/* Selected cell detail */}
@@ -495,32 +499,32 @@ export default function TrendsPage() {
           const inBand = pivotCard.band && v >= pivotCard.band[0] && v <= pivotCard.band[1]
           const [lo, hi] = pivotCard.band ?? [pvMin, pvMax]
           return (
-            <div style={{ borderTop: "1px solid var(--hair)", padding: "12px 20px", display: "flex", gap: 24, alignItems: "center", background: "var(--panel-2)" }}>
+            <div style={{ borderTop: `1px solid ${T.border}`, padding: "14px 28px", display: "flex", gap: 24, alignItems: "center", background: T.surfaceRaised }}>
               <div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-3)" }}>
+                <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3 }}>
                   {PIVOT_ROWS[ri]} · {PIVOT_WEEKS[wi]}
                 </div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 22, letterSpacing: "-0.03em", color: "var(--ink)", marginTop: 2 }}>
-                  {v.toFixed(1)} <span style={{ fontSize: 10, color: "var(--ink-3)" }}>{pivotCard.unit}</span>
+                <div style={{ fontFamily: T.mono, fontSize: 22, fontWeight: 300, letterSpacing: "-0.03em", color: T.ink, marginTop: 2 }}>
+                  {v.toFixed(1)} <span style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3 }}>{pivotCard.unit}</span>
                 </div>
               </div>
-              <div style={{ height: 36, width: 1, background: "var(--hair-strong)" }} />
+              <div style={{ height: 36, width: 1, background: T.border }} />
               <div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--ink-3)" }}>Target band</div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 11, color: inBand ? "var(--ok)" : "var(--warn)", marginTop: 2 }}>
+                <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3 }}>Target band</div>
+                <div style={{ fontFamily: T.mono, fontSize: 12, color: inBand ? T.ok : T.warn, marginTop: 2 }}>
                   {lo}–{hi} {pivotCard.unit} {inBand ? "✓ in range" : "⚠ out of band"}
                 </div>
               </div>
-              <div style={{ height: 36, width: 1, background: "var(--hair-strong)" }} />
+              <div style={{ height: 36, width: 1, background: T.border }} />
               <div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--ink-3)" }}>vs week mean</div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--ink-2)", marginTop: 2 }}>
+                <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3 }}>vs week mean</div>
+                <div style={{ fontFamily: T.mono, fontSize: 12, color: T.ink2, marginTop: 2 }}>
                   {v > pivotRowMeans[ri] ? "+" : ""}{(v - pivotRowMeans[ri]).toFixed(2)}
                 </div>
               </div>
               <button
                 onClick={() => setSelectedPivotCell(null)}
-                style={{ marginLeft: "auto", fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", border: "1px solid var(--hair-strong)", background: "transparent", color: "var(--ink-3)", padding: "4px 10px", cursor: "pointer" }}
+                style={{ marginLeft: "auto", fontFamily: T.sans, fontSize: 12, border: `1px solid ${T.borderMed}`, borderRadius: 6, background: "transparent", color: T.ink3, padding: "5px 12px", cursor: "pointer" }}
               >
                 Close
               </button>
@@ -532,18 +536,18 @@ export default function TrendsPage() {
           <table className="pivot-table" style={{ minWidth: 700 }}>
             <thead>
               <tr>
-                <th style={{ textAlign: "left" }}>Day</th>
-                {PIVOT_WEEKS.map(w => <th key={w}>{w}</th>)}
-                <th>Mean</th>
-                <th>Min</th>
-                <th>Max</th>
-                <th>Trend</th>
+                <th style={{ textAlign: "left", fontFamily: T.sans, fontWeight: 500 }}>Day</th>
+                {PIVOT_WEEKS.map(w => <th key={w} style={{ fontFamily: T.sans, fontWeight: 500 }}>{w}</th>)}
+                <th style={{ fontFamily: T.sans, fontWeight: 500 }}>Mean</th>
+                <th style={{ fontFamily: T.sans, fontWeight: 500 }}>Min</th>
+                <th style={{ fontFamily: T.sans, fontWeight: 500 }}>Max</th>
+                <th style={{ fontFamily: T.sans, fontWeight: 500 }}>Trend</th>
               </tr>
             </thead>
             <tbody>
               {PIVOT_ROWS.map((row, ri) => (
                 <tr key={row}>
-                  <td style={{ textAlign: "left", color: "var(--ink-2)" }}>{row}</td>
+                  <td style={{ textAlign: "left", color: T.ink2, fontFamily: T.sans }}>{row}</td>
                   {pivotValues[ri].map((v, wi) => {
                     const opacity = heatOpacity(v, pvMin, pvMax)
                     const isSelected = selectedPivotCell?.[0] === ri && selectedPivotCell?.[1] === wi
@@ -555,21 +559,18 @@ export default function TrendsPage() {
                         style={{
                           "--heat": opacity,
                           cursor: "pointer",
-                          outline: isSelected ? "2px solid var(--warn)" : undefined,
+                          outline: isSelected ? `2px solid ${T.warn}` : undefined,
                           outlineOffset: "-2px",
                         } as React.CSSProperties}
                       >
-                        <span>{isNaN(v) ? "—" : v.toFixed(1)}</span>
+                        <span style={{ fontFamily: T.mono, fontSize: 12, fontWeight: 300 }}>{isNaN(v) ? "—" : v.toFixed(1)}</span>
                       </td>
                     )
                   })}
-                  <td style={{ color: "var(--ink-2)", fontWeight: 500 }}>{pivotRowMeans[ri].toFixed(1)}</td>
-                  <td style={{ color: "var(--ink-3)", fontSize: 9 }}>{pivotRowMins[ri].toFixed(1)}</td>
-                  <td style={{ color: "var(--ink-3)", fontSize: 9 }}>{pivotRowMaxes[ri].toFixed(1)}</td>
-                  <td style={{
-                    color: pivotRowTrends[ri] === "↑" ? "var(--warn)" : pivotRowTrends[ri] === "↓" ? "var(--ok)" : "var(--ink-3)",
-                    fontSize: 13, textAlign: "center",
-                  }}>
+                  <td style={{ color: T.ink2, fontFamily: T.mono, fontSize: 12, fontWeight: 400 }}>{pivotRowMeans[ri].toFixed(1)}</td>
+                  <td style={{ color: T.ink3, fontFamily: T.mono, fontSize: 11 }}>{pivotRowMins[ri].toFixed(1)}</td>
+                  <td style={{ color: T.ink3, fontFamily: T.mono, fontSize: 11 }}>{pivotRowMaxes[ri].toFixed(1)}</td>
+                  <td style={{ color: pivotRowTrends[ri] === "↑" ? T.warn : pivotRowTrends[ri] === "↓" ? T.ok : T.ink3, fontSize: 14, textAlign: "center" }}>
                     {pivotRowTrends[ri]}
                   </td>
                 </tr>
@@ -578,81 +579,70 @@ export default function TrendsPage() {
           </table>
         </div>
 
-        {/* Row note */}
         {pivotCard.note && (
-          <div style={{ padding: "10px 20px", borderTop: "1px solid var(--hair)", fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", fontStyle: "italic" }}>
-            Agent: {pivotCard.note}
+          <div style={{ padding: "12px 28px", borderTop: `1px solid ${T.border}`, fontFamily: T.sans, fontSize: 12, color: T.ink3, fontStyle: "italic" }}>
+            {pivotCard.note}
           </div>
         )}
       </div>
 
-      {/* ── Insight feed ─────────────────────────────────────────────────── */}
-      <div className="panel">
-        <div className="panel-head">
-          <span>Insights</span>
-          <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-            Agent · reviewed by Darcy
-          </span>
-        </div>
+      {/* Insight feed */}
+      <div style={{ background: T.surface, borderRadius: 12, overflow: "hidden", marginBottom: 56 }}>
+        <SectionHeader title="Insights" sub="Reviewed by Darcy" />
         {insights.map(ins => (
           <div
             key={ins.id}
-            style={{ padding: "14px 20px", borderTop: "1px solid var(--hair)", cursor: "pointer" }}
+            style={{ padding: "16px 28px", borderTop: `1px solid ${T.border}`, cursor: "pointer" }}
             onClick={() => setOpenInsight(openInsight === ins.id ? null : ins.id)}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{
-                  fontFamily: "var(--mono)", fontSize: 8, letterSpacing: "0.08em", textTransform: "uppercase",
-                  color: ins.strength === "high" ? "var(--ok)" : "var(--warn)",
-                  border: `1px solid ${ins.strength === "high" ? "var(--ok)" : "var(--warn)"}`,
-                  padding: "2px 5px", flexShrink: 0,
+                  fontFamily: T.sans, fontSize: 11, fontWeight: 500,
+                  color: ins.strength === "high" ? T.ok : T.warn,
+                  background: ins.strength === "high" ? T.okSubtle : T.warnSubtle,
+                  padding: "2px 8px", borderRadius: 20, flexShrink: 0,
                 }}>
                   {ins.strength}
                 </span>
-                <span style={{ fontSize: 13.5, color: "var(--ink)" }}>{ins.title}</span>
+                <span style={{ fontFamily: T.sans, fontSize: 14, color: T.ink }}>{ins.title}</span>
               </div>
               <LifecycleChip lc={ins.lifecycle} />
             </div>
             {openInsight === ins.id && (
-              <div style={{ marginTop: 12 }}>
-                <p style={{ fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.6, marginBottom: 10 }}>{ins.body}</p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+              <div style={{ marginTop: 14 }}>
+                <p style={{ fontFamily: T.sans, fontSize: 13, color: T.ink2, lineHeight: 1.65, marginBottom: 12 }}>{ins.body}</p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
                   {ins.refs.map(r => (
-                    <span key={r} style={{ fontFamily: "var(--mono)", fontSize: 10, border: "1px solid var(--hair)", padding: "2px 6px", color: "var(--ink-2)" }}>{r}</span>
+                    <span key={r} style={{ fontFamily: T.mono, fontSize: 10, border: `1px solid ${T.border}`, borderRadius: 4, padding: "2px 6px", color: T.ink2 }}>{r}</span>
                   ))}
                 </div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ok)", textTransform: "uppercase", letterSpacing: "0.08em" }}>{ins.by}</div>
+                <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ok, fontWeight: 500 }}>{ins.by}</div>
               </div>
             )}
           </div>
         ))}
       </div>
 
-      {/* ── Correlation matrix (deep dive — bottom of page) ──────────────── */}
-      <div className="panel">
-        <div className="panel-head">
-          <span>Cross-signal correlation engine</span>
-          <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-            Click any cell · {period} · warm = co-elevation · cool = inverse
-          </span>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 0 }}>
+      {/* Correlation matrix */}
+      <div style={{ background: T.surface, borderRadius: 12, overflow: "hidden" }}>
+        <SectionHeader title="Cross-signal correlation engine" sub={`Click any cell · ${period} · warm = co-elevation · cool = inverse`} />
+        <div style={{ display: "grid", gridTemplateColumns: "auto 1fr" }}>
           {/* Matrix */}
-          <div style={{ padding: "16px 20px", overflowX: "auto", borderRight: "1px solid var(--hair)" }}>
-            <table style={{ borderCollapse: "collapse", fontFamily: "var(--mono)", fontSize: 11 }}>
+          <div style={{ padding: "20px 24px", overflowX: "auto", borderRight: `1px solid ${T.border}` }}>
+            <table style={{ borderCollapse: "collapse", fontFamily: T.mono, fontSize: 11 }}>
               <thead>
                 <tr>
-                  <th style={{ padding: "6px 10px", color: "var(--ink-3)", fontWeight: 400, textAlign: "left", borderBottom: "1px solid var(--hair-strong)", fontSize: 9 }} />
+                  <th style={{ padding: "6px 10px", color: T.ink3, fontWeight: 400, textAlign: "left", borderBottom: `1px solid ${T.borderMed}`, fontSize: 10, fontFamily: T.sans }} />
                   {corr.labels.map(l => (
-                    <th key={l} style={{ padding: "6px 10px", color: "var(--ink-3)", fontWeight: 400, textAlign: "center", letterSpacing: "0.1em", textTransform: "uppercase", fontSize: 9, borderBottom: "1px solid var(--hair-strong)" }}>{l}</th>
+                    <th key={l} style={{ padding: "6px 10px", color: T.ink3, fontWeight: 500, textAlign: "center", fontSize: 10, borderBottom: `1px solid ${T.borderMed}`, fontFamily: T.sans }}>{l}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {corr.labels.map((row, i) => (
                   <tr key={row}>
-                    <td style={{ padding: "4px 10px", color: "var(--ink-2)", textTransform: "uppercase", letterSpacing: "0.1em", fontSize: 9, borderBottom: "1px solid var(--hair)", whiteSpace: "nowrap" }}>{row}</td>
+                    <td style={{ padding: "4px 10px", color: T.ink2, fontSize: 10, borderBottom: `1px solid ${T.border}`, whiteSpace: "nowrap", fontFamily: T.sans }}>{row}</td>
                     {corr.labels.map((_, j) => {
                       const r = corr.matrix[i][j]
                       const abs = Math.abs(r)
@@ -664,18 +654,19 @@ export default function TrendsPage() {
                           onClick={() => i !== j ? setSelectedPair({ i: Math.min(i, j), j: Math.max(i, j) }) : null}
                           style={{
                             padding: "10px 10px", textAlign: "center",
-                            background: i === j ? "var(--panel-2)" : corrColor(r),
-                            borderBottom: "1px solid var(--hair)", position: "relative",
-                            color: i === j ? "var(--ink-3)" : corrTextColor(r, abs),
+                            background: i === j ? T.surfaceRaised : corrColor(r),
+                            borderBottom: `1px solid ${T.border}`, position: "relative",
+                            color: i === j ? T.ink3 : corrTextColor(r, abs),
                             fontWeight: rank >= 0 && i !== j ? 500 : 400,
                             cursor: i !== j ? "pointer" : "default",
-                            outline: isSelected ? "2px solid var(--ink)" : undefined,
+                            outline: isSelected ? `2px solid ${T.ink}` : undefined,
                             outlineOffset: -2, minWidth: 52,
+                            fontFamily: T.mono, fontSize: 11,
                           }}
                         >
                           {i === j ? "—" : (r >= 0 ? "+" : "") + r.toFixed(2)}
                           {rank >= 0 && i !== j && (
-                            <span style={{ position: "absolute", top: 2, right: 2, fontFamily: "var(--mono)", fontSize: 8, background: "var(--ink)", color: "var(--bg)", width: 13, height: 13, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <span style={{ position: "absolute", top: 2, right: 2, fontFamily: T.sans, fontSize: 9, background: T.ink, color: T.bg, width: 14, height: 14, borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>
                               {rank + 1}
                             </span>
                           )}
@@ -688,34 +679,34 @@ export default function TrendsPage() {
             </table>
           </div>
           {/* Pair detail */}
-          <div style={{ padding: "20px 24px", minWidth: 280 }}>
+          <div style={{ padding: "24px 28px", minWidth: 280 }}>
             {selectedPair && selectedR !== null ? (
               <>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-3)", marginBottom: 8 }}>Selected pair</div>
-                <div style={{ fontFamily: "var(--serif)", fontSize: 24, fontWeight: 300, letterSpacing: "-0.02em", color: "var(--ink)", marginBottom: 6 }}>
+                <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3, marginBottom: 10 }}>Selected pair</div>
+                <div style={{ fontFamily: T.serif, fontSize: 24, fontWeight: 300, letterSpacing: "-0.02em", color: T.ink, marginBottom: 8 }}>
                   {corr.labels[selectedPair.i]} × {corr.labels[selectedPair.j]}
                 </div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 22, letterSpacing: "-0.03em", marginBottom: 16, color: Math.abs(selectedR) >= 0.6 ? (selectedR > 0 ? "var(--warn)" : "var(--ok)") : "var(--ink-2)" }}>
+                <div style={{ fontFamily: T.mono, fontSize: 24, fontWeight: 300, letterSpacing: "-0.03em", marginBottom: 20, color: Math.abs(selectedR) >= 0.6 ? (selectedR > 0 ? T.warn : T.ok) : T.ink2 }}>
                   r = {selectedR >= 0 ? "+" : ""}{selectedR.toFixed(2)}
                 </div>
                 {selectedInsight ? (
                   <>
-                    <p style={{ fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.6, marginBottom: 12 }}>{selectedInsight.body}</p>
-                    <div style={{ borderLeft: "2px solid var(--accent)", paddingLeft: 10, marginBottom: 12 }}>
-                      <div style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-3)", marginBottom: 4 }}>Action</div>
-                      <div style={{ fontSize: 12, color: "var(--ink)", lineHeight: 1.5 }}>{selectedInsight.action}</div>
+                    <p style={{ fontFamily: T.sans, fontSize: 13, color: T.ink2, lineHeight: 1.65, marginBottom: 14 }}>{selectedInsight.body}</p>
+                    <div style={{ borderLeft: `2px solid ${T.accent}`, paddingLeft: 12, marginBottom: 14 }}>
+                      <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3, marginBottom: 4 }}>Action</div>
+                      <div style={{ fontFamily: T.sans, fontSize: 13, color: T.ink, lineHeight: 1.55 }}>{selectedInsight.action}</div>
                     </div>
                     <LifecycleChip lc={selectedInsight.lifecycle} />
-                    <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.06em", marginLeft: 8 }}>{selectedInsight.by}</span>
+                    <span style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3, marginLeft: 10 }}>{selectedInsight.by}</span>
                   </>
                 ) : (
-                  <p style={{ fontSize: 12.5, color: "var(--ink-3)", lineHeight: 1.6, fontStyle: "italic", fontFamily: "var(--serif)" }}>
+                  <p style={{ fontFamily: T.serif, fontSize: 15, color: T.ink3, lineHeight: 1.65, fontStyle: "italic" }}>
                     {corr.labels[selectedPair.i]} × {corr.labels[selectedPair.j]}: r = {selectedR.toFixed(2)}. Click another cell to explore a different pair.
                   </p>
                 )}
               </>
             ) : (
-              <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+              <div style={{ fontFamily: T.sans, fontSize: 13, color: T.ink3 }}>
                 Click any cell to explore a pair
               </div>
             )}

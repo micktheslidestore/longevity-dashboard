@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { DATA } from "@/data/james"
+import { T } from "@/components/Primitives"
 
 // ─── Load classification ──────────────────────────────────────────────────────
 
@@ -15,14 +16,14 @@ function loadScore(type: string | undefined | null, duration: number | undefined
 }
 
 const LOAD_COLOR = (score: number) =>
-  score === 0  ? "var(--hair-strong)"
-  : score < 30 ? "var(--ok)"
-  : score < 60 ? "color-mix(in srgb, var(--ok) 50%, var(--warn))"
-  : score < 80 ? "var(--warn)"
-  : "var(--alert)"
+  score === 0  ? T.border
+  : score < 30 ? T.ok
+  : score < 60 ? `color-mix(in srgb, ${T.ok} 50%, ${T.warn})`
+  : score < 80 ? T.warn
+  : T.alert
 
 const WORKOUT_COLORS: Record<string, string> = {
-  zone2: "var(--ok)", test: "var(--warn)", mobility: "var(--accent)", recovery: "#9B8FA9", rest: "var(--ink-3)",
+  zone2: T.ok, test: T.warn, mobility: T.accent, recovery: "#9B8FA9", rest: T.ink3,
 }
 
 // ─── Week data ────────────────────────────────────────────────────────────────
@@ -48,16 +49,15 @@ const DAY_NOTES: Record<string, DayNote[]> = {
 }
 
 const NOTE_COLORS: Record<DayNote["type"], string> = {
-  coaching: "var(--ok)",
-  medical:  "var(--warn)",
-  event:    "var(--accent)",
+  coaching: T.ok,
+  medical:  T.warn,
+  event:    T.accent,
 }
 
 // ─── Future weeks (placeholder data) ─────────────────────────────────────────
 
 type WeekPlanDay = typeof DATA.weekPlan[number]
 
-// Week Apr 27 – May 3 (all TBD)
 const WEEK_NEXT: WeekPlanDay[] = [
   { date: "2026-04-27", dow: "Sun", isToday: false, workout: { type: "recovery", label: "Recovery walk", duration: 30, note: "Light walk — recovery from DEXA week." }, diet: { label: "High fibre", note: "" } },
   { date: "2026-04-28", dow: "Mon", isToday: false, workout: { type: "zone2", label: "Zone-2 run", duration: 55, note: "Return to full volume." }, diet: { label: "High fibre", note: "" } },
@@ -95,12 +95,13 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
       left: "50%",
       transform: "translateX(-50%)",
       zIndex: 9999,
-      background: "var(--ink)",
-      color: "var(--bg)",
-      fontFamily: "var(--mono)",
-      fontSize: 11,
+      background: T.ink,
+      color: T.bg,
+      fontFamily: T.sans,
+      fontSize: 13,
+      fontWeight: 500,
       padding: "12px 24px",
-      letterSpacing: "0.04em",
+      borderRadius: 8,
       pointerEvents: "none",
       boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
     }}>
@@ -115,7 +116,7 @@ export default function CoachCalendarPage() {
   const [weekId, setWeekId] = useState("current")
   const [selectedDay, setSelectedDay] = useState<string | null>("2026-04-20")
 
-  // ── Per-week drag state ──
+  // Per-week drag state
   const [weekDays, setWeekDays] = useState<WeekPlanDay[]>(() =>
     WEEKS[0].days.map(d => ({ ...d }))
   )
@@ -139,7 +140,6 @@ export default function CoachCalendarPage() {
 
   const week = WEEKS.find(w => w.id === weekId)!
 
-  // Which days array is active for this week tab
   const activeDays     = weekId === "current" ? weekDays     : nextWeekDays
   const setActiveDays  = weekId === "current" ? setWeekDays  : setNextWeekDays
   const activePending  = weekId === "current" ? isPending    : isNextPending
@@ -149,8 +149,7 @@ export default function CoachCalendarPage() {
   const selected      = activeDays.find(d => d.date === selectedDay) ?? null
   const selectedNotes = selectedDay ? (week.notes[selectedDay] ?? []) : []
 
-  // ── Drag handlers ──
-
+  // Drag handlers
   function handleDragStart(date: string) {
     dragRef.current = date
   }
@@ -200,22 +199,20 @@ export default function CoachCalendarPage() {
     setToast("Schedule updated · syncing with Jamie's calendar")
   }
 
-  // Load bar uses activeDays so it reflects current drag state
   const loadBarDays = activeDays
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: "24px 32px", maxWidth: 1300 }}>
+    <div style={{ padding: "48px 48px 80px", maxWidth: 1200, margin: "0 auto", display: "flex", flexDirection: "column", gap: 56 }}>
 
-      {/* Toast */}
       {toast && <Toast message={toast} onDone={() => setToast(null)} />}
 
       {/* Header */}
-      <div style={{ borderBottom: "1px solid var(--hair)", paddingBottom: 16 }}>
-        <div style={{ fontFamily: "var(--mono)", fontSize: 8.5, textTransform: "uppercase", letterSpacing: "0.14em", color: "var(--ok)", marginBottom: 6 }}>
+      <div>
+        <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ok, marginBottom: 8, fontWeight: 500 }}>
           Training calendar · Darcy O&apos;Sullivan
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-          <h1 style={{ fontFamily: "var(--serif)", fontSize: 26, fontWeight: 400, color: "var(--ink)", margin: 0, letterSpacing: "-0.02em" }}>
+          <h1 style={{ fontFamily: T.serif, fontSize: 28, fontWeight: 400, color: T.ink, margin: 0, letterSpacing: "-0.02em" }}>
             Jamie Garis · weekly schedule
           </h1>
           <div style={{ display: "flex", gap: 8 }}>
@@ -223,7 +220,12 @@ export default function CoachCalendarPage() {
               <button
                 key={w.id}
                 onClick={() => { setWeekId(w.id); setSelectedDay(null) }}
-                style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", border: `1px solid ${weekId === w.id ? "var(--ok)" : "var(--hair-strong)"}`, padding: "6px 14px", color: weekId === w.id ? "var(--ok)" : "var(--ink-3)", background: weekId === w.id ? "color-mix(in srgb, var(--ok) 8%, transparent)" : "transparent", cursor: "pointer" }}
+                style={{
+                  fontFamily: T.sans, fontSize: 13, border: `1px solid ${weekId === w.id ? T.ok : T.borderMed}`,
+                  padding: "7px 16px", color: weekId === w.id ? T.ok : T.ink3,
+                  background: weekId === w.id ? T.okSubtle : "transparent",
+                  cursor: "pointer", borderRadius: 8, fontWeight: weekId === w.id ? 600 : 400,
+                }}
               >
                 {w.label}
               </button>
@@ -233,25 +235,25 @@ export default function CoachCalendarPage() {
       </div>
 
       {/* Load bar summary */}
-      <div className="panel">
-        <div className="panel-head">
-          <span>Weekly load · {week.label}</span>
-          <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+      <div style={{ background: T.surface, borderRadius: 12 }}>
+        <div style={{ padding: "16px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 600, color: T.ink }}>Weekly load · {week.label}</span>
+          <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3 }}>
             {loadBarDays.reduce((sum, d) => sum + loadScore(d.workout?.type, d.workout?.duration), 0)} load units · target ≤380
           </span>
         </div>
-        <div style={{ padding: "12px 24px 16px", display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8 }}>
+        <div style={{ padding: "14px 24px 18px", display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8 }}>
           {loadBarDays.map(day => {
             const score = loadScore(day.workout?.type, day.workout?.duration)
             const pct = Math.min(100, (score / 100) * 100)
             const color = LOAD_COLOR(score)
             return (
               <div key={day.date} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 8, color: "var(--ink-4)", textTransform: "uppercase" }}>{day.dow}</div>
-                <div style={{ width: "100%", height: 40, background: "var(--panel-2)", position: "relative", display: "flex", alignItems: "flex-end" }}>
-                  <div style={{ width: "100%", height: `${pct}%`, background: color, minHeight: score > 0 ? 3 : 0 }} />
+                <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink4 }}>{day.dow}</div>
+                <div style={{ width: "100%", height: 40, background: T.surfaceRaised, position: "relative", display: "flex", alignItems: "flex-end", borderRadius: 4 }}>
+                  <div style={{ width: "100%", height: `${pct}%`, background: color, minHeight: score > 0 ? 3 : 0, borderRadius: 4 }} />
                 </div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 8, color }}>
+                <div style={{ fontFamily: T.mono, fontSize: 11, color, fontWeight: 300 }}>
                   {score > 0 ? score : "—"}
                 </div>
               </div>
@@ -261,10 +263,10 @@ export default function CoachCalendarPage() {
       </div>
 
       {/* Day Kanban grid */}
-      <div className="panel">
-        <div className="panel-head">
-          <span>Day-by-day · {week.label}</span>
-          <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Drag workouts to reschedule · click a day to see detail</span>
+      <div style={{ background: T.surface, borderRadius: 12 }}>
+        <div style={{ padding: "16px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 600, color: T.ink }}>Day-by-day · {week.label}</span>
+          <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3 }}>Drag workouts to reschedule · click a day to see detail</span>
         </div>
 
         {/* Changes pending notice */}
@@ -273,23 +275,23 @@ export default function CoachCalendarPage() {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "10px 20px",
-            borderBottom: "1px solid var(--hair)",
-            background: "color-mix(in srgb, var(--warn) 7%, transparent)",
+            padding: "12px 24px",
+            borderBottom: `1px solid ${T.border}`,
+            background: T.warnSubtle,
           }}>
-            <span style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--warn)", letterSpacing: "0.04em" }}>
+            <span style={{ fontFamily: T.sans, fontSize: 13, color: T.warn, fontWeight: 500 }}>
               Changes pending — schedule has been rearranged
             </span>
             <div style={{ display: "flex", gap: 8 }}>
               <button
                 onClick={handleReset}
-                style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", border: "1px solid var(--hair-strong)", padding: "5px 14px", color: "var(--ink-3)", background: "transparent", cursor: "pointer" }}
+                style={{ fontFamily: T.sans, fontSize: 13, border: `1px solid ${T.borderMed}`, padding: "6px 16px", color: T.ink3, background: "transparent", cursor: "pointer", borderRadius: 8 }}
               >
                 Reset
               </button>
               <button
                 onClick={handleCommit}
-                style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", border: "1px solid var(--ok)", padding: "5px 14px", color: "var(--ok)", background: "color-mix(in srgb, var(--ok) 10%, transparent)", cursor: "pointer" }}
+                style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 600, border: `1px solid ${T.ok}`, padding: "6px 16px", color: T.ok, background: T.okSubtle, cursor: "pointer", borderRadius: 8 }}
               >
                 Commit changes
               </button>
@@ -301,46 +303,45 @@ export default function CoachCalendarPage() {
           {activeDays.map((day, i) => {
             const isSelected  = selectedDay === day.date
             const isDragOver  = dragOver === day.date
-            const wColor      = day.workout ? WORKOUT_COLORS[day.workout.type] ?? "var(--ink-4)" : "var(--ink-4)"
+            const wColor      = day.workout ? WORKOUT_COLORS[day.workout.type] ?? T.ink4 : T.ink4
             const notes       = week.notes[day.date] ?? []
             const hasConflict = notes.some(n => n.type === "medical") && day.workout?.type === "test"
 
             return (
               <div
                 key={day.date}
-                // click to select
                 onClick={() => setSelectedDay(isSelected ? null : day.date)}
-                // drop target
                 onDragOver={e => handleDragOver(e, day.date)}
                 onDragLeave={handleDragLeave}
                 onDrop={() => handleDrop(day.date)}
                 style={{
                   padding: "14px 12px",
-                  borderRight: i < 6 ? "1px solid var(--hair)" : undefined,
+                  borderRight: i < 6 ? `1px solid ${T.border}` : undefined,
                   borderLeft: day.isToday
-                    ? "2px solid var(--accent)"
+                    ? `3px solid ${T.accent}`
                     : isSelected
-                    ? "2px solid var(--ok)"
-                    : undefined,
+                    ? `3px solid ${T.ok}`
+                    : "3px solid transparent",
                   background: isDragOver
-                    ? "color-mix(in srgb, var(--ok) 8%, transparent)"
+                    ? T.okSubtle
                     : isSelected
-                    ? "var(--panel-2)"
+                    ? T.surfaceRaised
+                    : day.isToday
+                    ? T.warnSubtle
                     : "transparent",
-                  outline: isDragOver ? "1.5px dashed var(--ok)" : undefined,
+                  outline: isDragOver ? `1.5px dashed ${T.ok}` : undefined,
                   outlineOffset: isDragOver ? "-2px" : undefined,
                   cursor: "pointer",
                   minHeight: 220,
                   display: "flex",
                   flexDirection: "column",
                   gap: 8,
-                  transition: "background 0.12s, outline 0.12s",
                 }}
               >
                 {/* Day header */}
                 <div>
-                  <div style={{ fontFamily: "var(--mono)", fontSize: 8, color: "var(--ink-4)", textTransform: "uppercase", letterSpacing: "0.08em" }}>{day.dow}</div>
-                  <div style={{ fontFamily: "var(--mono)", fontSize: 20, letterSpacing: "-0.02em", lineHeight: 1, color: day.isToday ? "var(--accent)" : "var(--ink)", marginTop: 2 }}>
+                  <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink4 }}>{day.dow}</div>
+                  <div style={{ fontFamily: T.mono, fontSize: 20, letterSpacing: "-0.02em", lineHeight: 1, color: day.isToday ? T.accent : T.ink, marginTop: 2, fontWeight: 300 }}>
                     {day.date.slice(8)}
                   </div>
                 </div>
@@ -359,36 +360,37 @@ export default function CoachCalendarPage() {
                       cursor: "grab",
                       opacity: dragRef.current === day.date ? 0.4 : 1,
                       userSelect: "none",
+                      borderRadius: 6,
                     }}
                   >
-                    <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: wColor, textTransform: "uppercase", letterSpacing: "0.05em", lineHeight: 1.4 }}>{day.workout.label}</div>
+                    <div style={{ fontFamily: T.sans, fontSize: 12, color: wColor, fontWeight: 500, lineHeight: 1.4 }}>{day.workout.label}</div>
                     {day.workout.duration != null && (
-                      <div style={{ fontFamily: "var(--mono)", fontSize: 8, color: "var(--ink-3)", marginTop: 3 }}>{day.workout.duration} min</div>
+                      <div style={{ fontFamily: T.mono, fontSize: 11, color: T.ink3, marginTop: 3, fontWeight: 300 }}>{day.workout.duration} min</div>
                     )}
                     {day.workout.note && (
-                      <div style={{ fontSize: 10.5, color: "var(--ink-3)", lineHeight: 1.5, marginTop: 5 }}>{day.workout.note}</div>
+                      <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3, lineHeight: 1.5, marginTop: 5 }}>{day.workout.note}</div>
                     )}
                   </div>
                 ) : (
                   <div
                     draggable={false}
-                    style={{ padding: "10px 10px", borderLeft: "2px dashed var(--hair-strong)", minHeight: 52, display: "flex", alignItems: "center" }}
+                    style={{ padding: "10px 10px", borderLeft: `2px dashed ${T.borderMed}`, minHeight: 52, display: "flex", alignItems: "center", borderRadius: 6 }}
                   >
-                    <div style={{ fontFamily: "var(--mono)", fontSize: 8, color: "var(--ink-4)", textTransform: "uppercase" }}>Rest</div>
+                    <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink4 }}>Rest</div>
                   </div>
                 )}
 
                 {/* Calendar notes */}
                 {notes.map((note, ni) => (
-                  <div key={ni} style={{ padding: "5px 8px", borderLeft: `2px solid ${NOTE_COLORS[note.type]}`, background: `color-mix(in srgb, ${NOTE_COLORS[note.type]} 6%, transparent)` }}>
-                    <div style={{ fontFamily: "var(--mono)", fontSize: 7.5, color: "var(--ink-4)" }}>{note.time}</div>
-                    <div style={{ fontFamily: "var(--mono)", fontSize: 8.5, color: NOTE_COLORS[note.type], lineHeight: 1.35 }}>{note.text}</div>
+                  <div key={ni} style={{ padding: "5px 8px", borderLeft: `2px solid ${NOTE_COLORS[note.type]}`, background: `color-mix(in srgb, ${NOTE_COLORS[note.type]} 6%, transparent)`, borderRadius: 4 }}>
+                    <div style={{ fontFamily: T.mono, fontSize: 10, color: T.ink4, fontWeight: 300 }}>{note.time}</div>
+                    <div style={{ fontFamily: T.sans, fontSize: 11, color: NOTE_COLORS[note.type], lineHeight: 1.35, fontWeight: 500 }}>{note.text}</div>
                   </div>
                 ))}
 
                 {/* Conflict indicator */}
                 {hasConflict && (
-                  <div style={{ fontFamily: "var(--mono)", fontSize: 7, color: "var(--warn)", textTransform: "uppercase", letterSpacing: "0.08em" }}>⚠ High-load test day</div>
+                  <div style={{ fontFamily: T.sans, fontSize: 11, color: T.warn, fontWeight: 500 }}>⚠ High-load test day</div>
                 )}
               </div>
             )
@@ -397,44 +399,44 @@ export default function CoachCalendarPage() {
 
         {/* Selected day detail */}
         {selected && (
-          <div style={{ padding: "18px 24px", borderTop: "1px solid var(--hair)", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 24 }}>
+          <div style={{ padding: "20px 24px", borderTop: `1px solid ${T.border}`, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 24 }}>
             {/* Workout */}
             <div>
-              <div style={{ fontFamily: "var(--mono)", fontSize: 8, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>
+              <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3, marginBottom: 10, fontWeight: 500 }}>
                 {selected.dow} {selected.date.slice(8)} · {selected.workout?.label ?? "Rest day"}
               </div>
               {selected.workout ? (
                 <>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
-                    <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: WORKOUT_COLORS[selected.workout.type], border: `1px solid ${WORKOUT_COLORS[selected.workout.type]}`, padding: "2px 7px", textTransform: "uppercase" }}>{selected.workout.type}</span>
-                    {selected.workout.duration != null && <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)" }}>{selected.workout.duration} min</span>}
-                    <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: LOAD_COLOR(loadScore(selected.workout.type, selected.workout.duration)) }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+                    <span style={{ fontFamily: T.sans, fontSize: 12, color: WORKOUT_COLORS[selected.workout.type], border: `1px solid ${WORKOUT_COLORS[selected.workout.type]}`, padding: "3px 8px", borderRadius: 6, fontWeight: 500 }}>{selected.workout.type}</span>
+                    {selected.workout.duration != null && <span style={{ fontFamily: T.mono, fontSize: 12, color: T.ink3, fontWeight: 300 }}>{selected.workout.duration} min</span>}
+                    <span style={{ fontFamily: T.mono, fontSize: 12, color: LOAD_COLOR(loadScore(selected.workout.type, selected.workout.duration)), fontWeight: 300 }}>
                       Load: {loadScore(selected.workout.type, selected.workout.duration)}
                     </span>
                   </div>
-                  <div style={{ fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.55 }}>{selected.workout.note}</div>
+                  <div style={{ fontFamily: T.sans, fontSize: 13, color: T.ink2, lineHeight: 1.55 }}>{selected.workout.note}</div>
                 </>
               ) : (
-                <div style={{ fontSize: 12.5, color: "var(--ink-3)", fontStyle: "italic" }}>Rest or active recovery only.</div>
+                <div style={{ fontFamily: T.serif, fontSize: 13, color: T.ink3, fontStyle: "italic" }}>Rest or active recovery only.</div>
               )}
             </div>
 
             {/* Nutrition */}
             <div>
-              <div style={{ fontFamily: "var(--mono)", fontSize: 8, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Nutrition · {selected.diet.label}</div>
-              <div style={{ fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.55 }}>{selected.diet.note || "Standard protocol — high fibre, no refined carbs."}</div>
+              <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3, marginBottom: 10, fontWeight: 500 }}>Nutrition · {selected.diet.label}</div>
+              <div style={{ fontFamily: T.sans, fontSize: 13, color: T.ink2, lineHeight: 1.55 }}>{selected.diet.note || "Standard protocol — high fibre, no refined carbs."}</div>
             </div>
 
             {/* Calendar events */}
             <div>
-              <div style={{ fontFamily: "var(--mono)", fontSize: 8, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Calendar</div>
+              <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3, marginBottom: 10, fontWeight: 500 }}>Calendar</div>
               {selectedNotes.length > 0 ? selectedNotes.map((note, i) => (
                 <div key={i} style={{ display: "flex", gap: 8, marginBottom: 6, alignItems: "baseline" }}>
-                  <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-4)", flexShrink: 0 }}>{note.time}</span>
-                  <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: NOTE_COLORS[note.type] }}>{note.text}</span>
+                  <span style={{ fontFamily: T.mono, fontSize: 11, color: T.ink4, flexShrink: 0, fontWeight: 300 }}>{note.time}</span>
+                  <span style={{ fontFamily: T.sans, fontSize: 13, color: NOTE_COLORS[note.type], fontWeight: 500 }}>{note.text}</span>
                 </div>
               )) : (
-                <div style={{ fontSize: 12, color: "var(--ink-4)", fontStyle: "italic" }}>No scheduled events.</div>
+                <div style={{ fontFamily: T.serif, fontSize: 13, color: T.ink4, fontStyle: "italic" }}>No scheduled events.</div>
               )}
             </div>
           </div>
@@ -442,22 +444,22 @@ export default function CoachCalendarPage() {
       </div>
 
       {/* Upcoming high-stakes days */}
-      <div className="panel">
-        <div className="panel-head">
-          <span>High-stakes days ahead</span>
-          <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Avoid scheduling extra load on these dates</span>
+      <div style={{ background: T.surface, borderRadius: 12 }}>
+        <div style={{ padding: "16px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 600, color: T.ink }}>High-stakes days ahead</span>
+          <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3 }}>Avoid scheduling extra load on these dates</span>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1, background: "var(--hair)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1, background: T.border }}>
           {[
             { date: "22 Apr", label: "DEXA + VO₂max retest", type: "medical", note: "Fasting required. No training. High measurement load." },
             { date: "29 Apr", label: "Quarterly protocol review", type: "coaching", note: "60-min session with Darcy. Results interpretation and planning." },
             { date: "6 May",  label: "Full quarterly bloods", type: "medical", note: "ApoB, testosterone, HbA1c, Lp(a), ferritin. Fasting required." },
             { date: "12 May", label: "Cardiology consult", type: "medical", note: "Dr. Rao. ApoB discussion, possible statin review. No pre-test training." },
           ].map(item => (
-            <div key={item.date} style={{ padding: "16px 18px", background: "var(--bg)" }}>
-              <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: NOTE_COLORS[item.type as DayNote["type"]], textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>{item.date}</div>
-              <div style={{ fontFamily: "var(--mono)", fontSize: 10.5, color: "var(--ink)", marginBottom: 6 }}>{item.label}</div>
-              <div style={{ fontSize: 11.5, color: "var(--ink-3)", lineHeight: 1.55 }}>{item.note}</div>
+            <div key={item.date} style={{ padding: "18px 20px", background: T.surface }}>
+              <div style={{ fontFamily: T.mono, fontSize: 13, color: NOTE_COLORS[item.type as DayNote["type"]], marginBottom: 6, fontWeight: 300 }}>{item.date}</div>
+              <div style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 500, color: T.ink, marginBottom: 8 }}>{item.label}</div>
+              <div style={{ fontFamily: T.sans, fontSize: 13, color: T.ink3, lineHeight: 1.55 }}>{item.note}</div>
             </div>
           ))}
         </div>
