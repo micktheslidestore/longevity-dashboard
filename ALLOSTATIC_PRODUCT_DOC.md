@@ -7,7 +7,7 @@
 
 ## 1. What this is
 
-Allostatic is a longevity coaching dashboard — a software layer that sits between a coach (Darcy O'Sullivan) and a client (Jamie Garis, 54M principal) and makes the coaching relationship more data-driven, more accountable, and more scalable.
+Allostatic is a longevity coaching platform — a software layer that sits between a coach (Darcy O'Sullivan) and a client (Jamie Garis, 54M principal) and makes the coaching relationship more data-driven, more accountable, and more scalable.
 
 The core problem it solves: high-performance longevity coaching currently lives in spreadsheets, WhatsApp messages, and PDFs. The coach has data from wearables, labs, and check-ins scattered across five different apps. The client doesn't know what's actually working. Neither party has a clear record of what was decided and what happened as a result.
 
@@ -89,14 +89,14 @@ Landing gate (/)
 │   └── Team                       — Care team roster
 │
 └── Coach product (/coach/*)       — Darcy's view
-    ├── Command Centre              — Decision layer, agent, today
-    ├── Compliance                  — Outcomes, adherence, flags
+    ├── Command Centre              — Decision layer, agent SOP, workout card, today
+    ├── Compliance                  — Outcomes, flag triage, adherence
     ├── Calendar                    — Weekly Kanban, drag-and-drop
     ├── Trends                      — Full analytical view
-    ├── Medical                     — Biomarker action view + roadmap
+    ├── Medical                     — Biomarker action view + lab upload
     ├── Team                        — Inbox, team management
     ├── Dashboard                   — Live view of Jamie's dashboard
-    └── Architecture                — System connectivity map
+    └── Architecture                — System connectivity map + lifecycle workflows
 ```
 
 ### 3.2 The landing gate
@@ -117,10 +117,13 @@ Both sidebars (`ClientSidebar`, `CoachSidebar`) call `setRole("james" | "darcy")
 
 ### 4.1 Coach Command Centre — `/coach/command`
 
-The primary workspace for Darcy. Four sections:
+The primary workspace for Darcy. Opens every morning with everything needed to manage Jamie's programme. Seven sections, flowing top to bottom:
 
-**Decision Layer** *(new — most important)*  
-The first thing Darcy sees. A calm, spacious panel with:
+**Since your last visit** *(new)*
+Dismissible banner at the top surfacing 3 recent changes since Darcy last opened the app — colour-coded by severity (warn/accent/neutral), each with a timestamp and a deep link to the relevant page (Trends, Medical, Compliance). One click to dismiss for the session.
+
+**Decision Layer**
+The first fixed decision surface. A calm, spacious panel with:
 - A plain-English situation narrative (large serif)
 - Three supporting data points
 - A specific recommendation with timeline
@@ -128,21 +131,48 @@ The first thing Darcy sees. A calm, spacious panel with:
 
 This is the missing piece in most coaching dashboards: not just "here's a flag" but "here's what to do about it, now."
 
-**Agent (AI chat)**  
-Pre-loaded with Jamie's overnight analysis. Pattern-matched responses covering: morning briefing, ApoB trajectory, protocol changes, autonomic flag, quarterly summary. Navigates to sections when asked ("show me trends" routes to `/coach/trends`). Designed to accept real API integration when ready.
+**Workout recommendation card** *(new)*
+Agent-drafted 5-day workout block for the current week. Each day shows date, workout type, duration, and notes. The coach can:
+- Edit any day inline (type dropdown, duration, note field)
+- Approve the full block → transitions to "Pushed" state with toast notification
+- Modify individual days before approving
+- Reject and ask the agent to draft again
 
-**Today (Workflow)**  
-4 action cards — each with urgency colour-coding, expandable detail, a deep link to the relevant section (Medical, Trends, Compliance), and a CTA that marks the action as done.
+Lifecycle state machine: Draft → Approved → Pushed to Jamie's calendar. The card includes an agent reasoning paragraph (serif) explaining why the week was structured as it was, factoring in active correctors, calendar events, and recovery signals.
 
-**Programme Checklist / Quarterly History**  
-Collapsed by default — they're reference tools, not primary decision surfaces.
+**Agent — structured Morning SOP + chat** *(enhanced)*
+Two layers in one panel:
+
+*Morning SOP* (collapsible, open by default) — 5 structured sections with colour-coded status dots:
+1. Overnight analysis — HRV, RHR, skin temp, sleep efficiency with values and context
+2. Workout recommendation — link to the card above with corrector status
+3. Attention flags — active flags with pattern-match notes
+4. Pending items — draft count and countersignature SLA status
+5. Today's actions — 3 prioritised items with deep links
+
+*Chat interface* (below SOP) — pre-loaded with Jamie's overnight context. Quick-action chips: ApoB status, draft protocol change, autonomic flag analysis, quarterly summary. Pattern-matched responses covering all key data points; navigates to sections when asked. Designed to accept real Claude API integration.
+
+**Today (Workflow)**
+4 action cards — each with urgency colour-coding, a **due-date badge** (mono text, amber when "by today"), expandable detail, a deep link to the relevant section, and a CTA that marks the action done.
+
+**Programme Checklist**
+Collapsed by default. Unchecks show **due dates** below the task text — dates with "by today" appear in amber. Action buttons deep-link to the relevant coach page (Compliance, Medical, Trends). Organised in four buckets: coach programme, coach daily, Jamie programme, Jamie daily.
+
+**Quarterly history + Prepare review** *(enhanced)*
+Collapsed by default. The active Q2 row includes a **"Prepare review →"** CTA that opens a 4-step guided questionnaire:
+1. What worked well this quarter?
+2. What didn't land or was missed?
+3. Proposed targets for next quarter
+4. Protocol changes to carry forward
+
+Progress bar across steps. "Save and close" available at any point. On completion, notes are saved as a draft for the Tue 29 Apr quarterly review session.
 
 ### 4.2 Compliance — `/coach/compliance`
 
 Leads with **Outcomes**, not adherence. The question is "did it work?" not "did they do it?"
 
 - **Outcomes section:** resolved correctors with before/after impact, expandable notes
-- **Attention flags:** actionable items with Dismiss and Act buttons  
+- **Attention flags:** full lifecycle triage — each flag moves through **Raised → Triaged → Resolved** with three action buttons (Act / Notify Jamie / Watch), a `LifecycleTrack` dot indicator, and after triage: "Triaged via [action]" + "Mark resolved"
 - **Protocol adherence grid:** 6 protocols with progress bars, streaks, clickable detail
 - **30-day adherence calendar:** colour-coded composite score per day
 - **Check-in summary:** this morning's subjective data from Jamie
@@ -153,13 +183,38 @@ Weekly Kanban view with drag-and-drop. Drag a workout from one day to another to
 
 Features: load bar chart (workout volume by day), calendar events overlaid (coaching calls, medical tests), high-stakes days panel (DEXA, bloods, cardiology).
 
-### 4.4 Medical — `/app/medical/page.tsx` (shared)
+### 4.4 Medical — `/coach/medical`
 
 Two layers:
 1. **Biomarker Pace** (top, action-focused): 4 biomarkers with pace status, "what this means this week", and Darcy's specific action. Clickable.
 2. **Medical Roadmap**: milestone timeline (Apr 20 → Jul 2), biomarker target progress rails, full lab panels with trajectory charts.
 
-### 4.5 Client Command — `/client/command`
+**Upload lab results** *(new)*: button in the page header opens a modal with:
+- Drag-and-drop file upload area (PDF, CSV, image)
+- Data source selector with "Last uploaded" and "Next expected" dates per source
+- Upload confirmation toast
+
+### 4.5 Architecture — `/coach/architecture`
+
+Two tabs:
+
+**Architecture tab** — interactive system map:
+- 5 layers: Data sources → Processing → Coach product → Client product → Outputs
+- 17 labelled edges: sync / review / generate / alert / read
+- Click any node: see what it receives from and sends to
+- Click any edge: plain-English description of what triggers what
+- Action → visual result table: 7 rows mapping coach actions to client-visible outcomes
+- Integration status badges: live / proto / planned
+
+**Workflows tab** *(new)* — 4 lifecycle diagrams in a 2×2 grid:
+- **Protocol outcome:** Pending → Monitoring → Effective / Partial
+- **Attention flag:** Raised → Triaged → Resolved
+- **Course corrector:** Draft → Active → Acknowledged → Resolved / Superseded
+- **Directive:** Draft → In review → Signed
+
+Each lifecycle shows a horizontal pill-and-arrow flow diagram with a "now" badge on Jamie's current state, and clicking any state pill expands a panel showing entry condition, actor, and visibility rules. Actor ownership chips at the bottom summarise who owns each lifecycle.
+
+### 4.6 Client Command — `/client/command`
 
 Jamie's equivalent of the coach command, but read-focused:
 - **Health assistant** (agent): morning briefing, zone-2 questions, "create a health consult PDF" — plain English, no jargon
@@ -168,21 +223,11 @@ Jamie's equivalent of the coach command, but read-focused:
 - **Protocol (read-only)**: Darcy's strategy doc, collapsed sections
 - **Resolved interventions**: historical correctors with impact
 
-### 4.6 AI Agent / Chat Widget
+### 4.7 AI Agent / Chat Widget
 
 Two implementations:
 1. **Full panel** on Command pages — prominent, first on page
 2. **Floating widget** on all other pages — bottom-right bubble, 56px circle, slides open to a compact panel (360×480px). Hidden on Command pages (full panel already there). Role-aware: green accent for coach, amber for client.
-
-### 4.7 Architecture page — `/coach/architecture`
-
-An interactive system map for Darcy (and useful in prospect conversations). Shows:
-- **5 layers**: Data sources → Processing → Coach product → Client product → Outputs
-- **17 labelled edges**: sync / review / generate / alert / read
-- **Click any node**: see what it receives from and sends to
-- **Click any edge**: plain-English description of what triggers what
-- **Action → visual result table**: 7 rows mapping coach actions to client-visible outcomes
-- **Integration status badges**: live / proto / planned
 
 ---
 
@@ -213,8 +258,9 @@ Daily check-in  ────RPE──────────▶  Darcy reviews 
 | Darcy does in Coach product | Jamie sees in Client product |
 |---|---|
 | Approves a recommendation in Decision Layer | Corrector card updates on dashboard |
+| Approves workout block in recommendation card | Week plan updates, calendar syncs |
 | Publishes a protocol change | New directive card appears + amber alert banner |
-| Agent generates a draft → Darcy approves | Strategy section updates (visible read-only) |
+| Agent generates a draft → Darcy countersigns | Strategy section updates (visible read-only) |
 | Closes the quarter | Report archived → link in Quarterly History |
 | Updates a Q2 biomarker target | Progress bar on Jamie's northstar updates |
 | Jamie submits daily check-in | RPE feeds IRT engine → AL score updates → visible in Compliance |
@@ -228,6 +274,8 @@ Daily check-in  ────RPE──────────▶  Darcy reviews 
 | IRT/AL computation | **Live** | Computed from raw time series on every render |
 | AI Agent | **Prototype** | Pattern-matched responses, no API calls |
 | Directive publishing | **Modelled** | UI flow works, no database write |
+| Workout block push | **Modelled** | State transitions in UI, no calendar write |
+| Lab upload | **Modelled** | Modal + toast, no file processing |
 | Push notifications | **Planned** | Not yet built |
 | PDF export | **Modelled** | Modal confirms, no actual PDF generated |
 
@@ -244,13 +292,13 @@ Daily check-in  ────RPE──────────▶  Darcy reviews 
 
 | Role | Font | Usage |
 |---|---|---|
-| Narrative / headings | Source Serif 4 (300–400 weight) | Situation descriptions, page titles, northstar statement |
-| Interface / labels | Inter Tight (300–500 weight) | Body text, navigation, buttons |
-| Data / metrics | IBM Plex Mono (300–500 weight) | Numbers, timestamps, status labels, data points only |
+| Narrative / headings | Source Serif 4 (300–400 weight) | Situation descriptions, page titles, northstar statement, agent reasoning |
+| Interface / labels | DM Sans (400–600 weight) | All body text, navigation, buttons, descriptions, checklist items |
+| Data / metrics | IBM Plex Mono (300–500 weight) | Numbers, timestamps, scores, and data values only |
 
-Body: 15px / 1.7 line height. Generous letter spacing reduced (0.003em vs previous 0.005em).
+**Rule:** Monospace is for **data only**. Narrative content — especially the Decision Layer, agent responses, and reasoning paragraphs — uses DM Sans or Source Serif 4. Monospace everywhere creates terminal noise, not calm.
 
-Principle: monospace is for **data only**. Narrative content — especially the Decision Layer and agent responses — uses Inter or Source Serif 4. Monospace everywhere creates terminal noise, not calm.
+**Sentence case everywhere.** No `text-transform: uppercase`. No ALL CAPS labels or buttons.
 
 ### 6.3 Colour palette
 
@@ -274,18 +322,31 @@ Ink-4:         #3C3935    (very muted — placeholders, disabled)
 
 ### 6.4 Spacing principles
 
-- Panel header: 18px 24px padding
-- Page containers: 40px 44px padding
-- Section gaps: 32px
+- Panel header: 16px 24px padding
+- Page containers: 48px (desktop), 20px 16px (mobile)
+- Section gaps: 32–56px
 - 20% whitespace minimum — when in doubt, remove an element rather than add one
+- No 1px border grids between sections — use whitespace and background fills
 - Buttons confirm intent before executing: all destructive or consequential actions use a modal
 
-### 6.5 Interaction model
+### 6.5 Mobile responsiveness
 
-- All buttons have `transition: opacity 0.15s ease, background 0.15s ease`
+Full responsive layout at <768px:
+
+- **Sidebars** collapse to a fixed bottom tab bar (56px, icons only, safe-area inset aware)
+- **Content areas** switch to 20px/16px padding
+- **Grid layouts** collapse to single column
+- **Chat widget FAB** repositions above the tab bar
+- **Morning card** stacks vertically
+- Minimum 44px touch targets on all interactive elements
+
+### 6.6 Interaction model
+
+- All buttons have `transition: all 0.12s ease`
 - Destructive/consequential actions open a modal listing what will happen
 - Toast notifications for async confirmations (3.5s timeout, bottom-right stack)
 - Information flows downward and rightward: overview → detail, current → future, coach decision → client action
+- Lifecycle state machines are visual and interactive — every status is tappable with an explanation
 
 ---
 
@@ -297,13 +358,13 @@ Ink-4:         #3C3935    (very muted — placeholders, disabled)
 |---|---|
 | Framework | Next.js 16.2.4 (App Router) |
 | Language | TypeScript |
-| Styling | Tailwind CSS base + custom CSS variables |
+| Styling | CSS custom properties + inline styles via design token object |
 | Charts | Recharts |
 | State management | React useState + Context (RoleContext) |
 | Data | Static TypeScript file (`src/data/james.ts`) |
 | AI Agent | Pattern-matched responses (no API) |
 | Hosting | Vercel (free tier) |
-| Fonts | Google Fonts (Source Serif 4, Inter Tight, IBM Plex Mono) |
+| Fonts | Google Fonts (Source Serif 4, DM Sans, IBM Plex Mono) |
 
 ### 7.2 Production stack (recommended)
 
@@ -411,11 +472,18 @@ This is achievable as a solo full-stack build or with a small team (1 engineer +
 - ✅ Pivot heatmap with per-row statistics (mean, min, max, trend)
 - ✅ Chart rendering (Recharts) with protocol annotations and multi-metric overlay
 - ✅ Biomarker target progress rails
+- ✅ Flag triage state machine (Raised → Triaged → Resolved) with persisted React state
+- ✅ Workout recommendation card lifecycle (Draft → Approved → Pushed)
+- ✅ Quarterly review questionnaire (4-step, step-persisted)
+- ✅ Architecture lifecycle diagrams with interactive expand panels
+- ✅ Mobile responsive layout (bottom tab bar, stacked grids, safe-area insets)
 
 ### 9.2 Modelled (UI complete, no backend)
 
 - 🟡 Agent chat (pattern matching → needs Claude API)
 - 🟡 Directive publishing (toast confirms → needs DB write)
+- 🟡 Workout block push (state transitions → needs calendar write)
+- 🟡 Lab file upload (modal + toast → needs file processing)
 - 🟡 Wearable sync (static data → needs Terra or direct APIs)
 - 🟡 PDF export (modal → needs Puppeteer/PDF generation)
 - 🟡 Push notifications (alert UI exists → needs email/push service)
@@ -428,7 +496,7 @@ This is achievable as a solo full-stack build or with a small team (1 engineer +
 - ❌ Coach onboarding flow
 - ❌ Client onboarding / device connection
 - ❌ Real-time updates (WebSocket or Supabase Realtime)
-- ❌ Mobile app (web-only currently)
+- ❌ Mobile app (web-only, fully responsive)
 - ❌ Admin / billing layer
 
 ---
@@ -450,9 +518,17 @@ Standard wearable apps average population norms. A 45 ms HRV reads as "good" for
 
 Most coaching dashboards surface flags without telling the coach what to do. The gap between "HRV is low" and "Darcy needs to extend the intensity hold and push a directive" is significant. The Decision Layer closes that gap: situation + data + recommendation + one-click approval.
 
+### Why an agent-first workout recommendation?
+
+The agent drafts the workout block based on overnight signals (HRV, correctors, calendar conflicts, upcoming tests) before Darcy opens the app. Darcy arrives to a proposal, not a blank slate. She can edit individual days inline, approve the full block, or reject and redraft. This models the right workflow: AI as a capable first drafter, coach as the expert reviewer.
+
 ### Why outcomes before adherence on the Compliance page?
 
 Adherence metrics answer "is Jamie doing the protocol?" but Darcy's real question is "is the protocol working?" Showing adherence first trains the coach to optimise for compliance rather than results. Leading with outcomes builds conviction in what the system is telling her.
+
+### Why a structured Morning SOP instead of a pure chat interface?
+
+Open-ended chat puts all the burden of knowing what to ask on the coach. The structured SOP — 5 sections, each pre-populated with the overnight analysis — means Darcy can scan the full picture in under 60 seconds, then drop into chat only for specific follow-up questions. The SOP is the briefing; the chat is the drill-down.
 
 ### Why a floating widget rather than a second nav link for the agent?
 
@@ -460,7 +536,23 @@ The agent on Command pages is a primary workspace. On other pages (Trends, Medic
 
 ---
 
-## 11. Markup guide — using this document for amends
+## 11. Demo guide — what to show and in what order
+
+For a walkthrough video or live prospect demo, use this sequence:
+
+1. **Landing gate** `/` — sets the two-product framing. Click Jamie first.
+2. **Client dashboard** `/client` — AL score ring, northstar, morning directive from Darcy, today's workout. The calm, personal experience.
+3. **Client check-in** `/client/checkin` — how Jamie reports back. Sleep/energy/mood, compliance slider.
+4. **Client trends** `/client/trends` — 30-day HRV, ApoB, sleep charts with protocol event markers.
+5. **Switch to Darcy** — back to `/` and into `/coach/command`.
+6. **Coach command centre** `/coach/command` — the money shot. Walk through in order: since-last-visit banner → Decision Layer → Workout recommendation card (edit a day, approve) → Agent SOP (expand sections) → Today checklist with due dates → Prepare quarterly review questionnaire.
+7. **Coach compliance** `/coach/compliance` — flag triage (click Act/Notify/Watch, watch the lifecycle dots advance). Outcomes section showing before/after impact.
+8. **Coach medical** `/coach/medical` — biomarker pace view, upload lab results button + modal.
+9. **Architecture** `/coach/architecture` — switch to Workflows tab, show the four lifecycle diagrams and the "now" badge on Jamie's current state.
+
+---
+
+## 12. Markup guide — using this document for amends
 
 When using this document to brief amends to a developer or AI:
 
