@@ -7,7 +7,7 @@ import { T } from "@/components/Primitives"
 
 const { command } = DATA
 
-// ─── Quarterly history ────────────────────────────────────────────────────────
+// ─── Quarter history data ─────────────────────────────────────────────────────
 
 const QUARTER_HISTORY = [
   {
@@ -30,7 +30,7 @@ const QUARTER_HISTORY = [
   },
 ]
 
-// ─── Modal ────────────────────────────────────────────────────────────────────
+// ─── Shared modal ─────────────────────────────────────────────────────────────
 
 function Modal({ title, body, onClose, onConfirm, confirmLabel }: {
   title: string; body: React.ReactNode; onClose: () => void
@@ -52,6 +52,50 @@ function Modal({ title, body, onClose, onConfirm, confirmLabel }: {
   )
 }
 
+// ─── Since last visit ─────────────────────────────────────────────────────────
+
+const SINCE_LAST_VISIT = [
+  { id: "v1", when: "Thu 22:40", type: "agent-flag",  title: "Overnight glucose excursion", body: "+18 mg/dL at 02:14 — no food log. Dawn phenomenon possible. Observe one more night.", href: "/coach/trends", linkLabel: "View trends", color: T.warn },
+  { id: "v2", when: "Wed 18:31", type: "share",        title: "Note forwarded to Dr. Rao",   body: "Chest pressure entry from Mon 13 Apr shared with Dr. Sanjay Rao with Jamie's consent.", href: "/coach/medical", linkLabel: "Medical roadmap", color: T.ink3 },
+  { id: "v3", when: "Wed 07:45", type: "checkin",      title: "Check-in submitted",          body: "Jamie · Sleep 7 · Mood 6 · Load 8 · tags: foggy, caffeine-heavy", href: "/coach/compliance", linkLabel: "Compliance", color: T.accent },
+]
+
+function SinceLastVisit() {
+  const router = useRouter()
+  const [dismissed, setDismissed] = useState(false)
+  if (dismissed) return null
+  return (
+    <div style={{ background: T.surface, borderRadius: 12, border: `1px solid ${T.border}`, overflow: "hidden" }}>
+      <div style={{ padding: "14px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 600, color: T.ink }}>Since your last visit</span>
+          <span style={{ fontFamily: T.sans, fontSize: 11, color: T.ink4, background: T.surfaceRaised, padding: "2px 8px", borderRadius: 20 }}>3 changes</span>
+        </div>
+        <button onClick={() => setDismissed(true)} style={{ fontFamily: T.sans, fontSize: 12, color: T.ink4, background: "transparent", border: "none", cursor: "pointer", padding: "4px 8px" }}>
+          Dismiss
+        </button>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column" }}>
+        {SINCE_LAST_VISIT.map((item, i) => (
+          <div key={item.id} style={{ padding: "12px 24px", borderBottom: i < SINCE_LAST_VISIT.length - 1 ? `1px solid ${T.border}` : undefined, display: "flex", alignItems: "center", gap: 16 }}>
+            <div style={{ width: 3, height: 36, background: item.color, borderRadius: 2, flexShrink: 0 }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 2 }}>
+                <span style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 500, color: T.ink }}>{item.title}</span>
+                <span style={{ fontFamily: T.mono, fontSize: 11, color: T.ink4 }}>{item.when}</span>
+              </div>
+              <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3, lineHeight: 1.4 }}>{item.body}</div>
+            </div>
+            <button onClick={() => router.push(item.href)} style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3, background: "transparent", border: "none", cursor: "pointer", padding: "4px 0", flexShrink: 0 }}>
+              {item.linkLabel} →
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── Decision layer ───────────────────────────────────────────────────────────
 
 function DecisionLayer() {
@@ -68,18 +112,13 @@ function DecisionLayer() {
 
   return (
     <div style={{ background: T.warnSubtle, border: `1px solid ${T.warnMuted}`, padding: "40px 44px", borderRadius: 12 }}>
-      {/* Label */}
       <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink4, marginBottom: 24, fontWeight: 500 }}>
         Decision required · {DATA.user.today}
       </div>
-
-      {/* Situation — large, calm, serif */}
       <p style={{ fontFamily: T.serif, fontSize: 21, fontWeight: 300, lineHeight: 1.7, color: T.ink, margin: "0 0 36px", maxWidth: 620 }}>
         Jamie&apos;s allostatic load has been elevated for three consecutive days.
         The autonomic flag from 17 Apr has not resolved — his HRV is still suppressed and a board call this morning adds further cortisol load.
       </p>
-
-      {/* Three supporting data points */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 32, marginBottom: 36, paddingBottom: 36, borderBottom: `1px solid ${T.border}` }}>
         {[
           { label: "HRV last night", value: "41 ms", sub: "−11 vs his baseline of 52 ms", color: T.warn },
@@ -93,8 +132,6 @@ function DecisionLayer() {
           </div>
         ))}
       </div>
-
-      {/* Recommendation */}
       <div style={{ borderLeft: `2px solid ${T.ok}`, paddingLeft: 24, marginBottom: 32 }}>
         <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink4, marginBottom: 10, fontWeight: 600 }}>Recommendation</div>
         <p style={{ fontFamily: T.sans, fontSize: 14, color: T.ink2, lineHeight: 1.75, margin: 0, maxWidth: 580 }}>
@@ -103,22 +140,14 @@ function DecisionLayer() {
           If HRV shows two consecutive nights above 44 ms before then, the hold can be lifted early.
         </p>
       </div>
-
-      {/* Action buttons */}
       <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-        <button
-          onClick={() => setStatus("approved")}
-          style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 600, border: "none", background: T.ok, color: T.bg, padding: "12px 28px", cursor: "pointer", borderRadius: 8 }}
-        >
+        <button onClick={() => setStatus("approved")} style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 600, border: "none", background: T.ok, color: T.bg, padding: "12px 28px", cursor: "pointer", borderRadius: 8 }}>
           Approve and push to Jamie
         </button>
         <button style={{ fontFamily: T.sans, fontSize: 14, border: `1px solid ${T.borderMed}`, background: "transparent", color: T.ink2, padding: "12px 20px", cursor: "pointer", borderRadius: 8 }}>
           Modify
         </button>
-        <button
-          onClick={() => setStatus("dismissed")}
-          style={{ fontFamily: T.sans, fontSize: 13, border: "none", background: "transparent", color: T.ink4, padding: "12px 16px", cursor: "pointer" }}
-        >
+        <button onClick={() => setStatus("dismissed")} style={{ fontFamily: T.sans, fontSize: 13, border: "none", background: "transparent", color: T.ink4, padding: "12px 16px", cursor: "pointer" }}>
           Not now
         </button>
       </div>
@@ -126,12 +155,178 @@ function DecisionLayer() {
   )
 }
 
-// ─── Agent panel ──────────────────────────────────────────────────────────────
+// ─── Workout recommendation card ──────────────────────────────────────────────
+
+type WorkoutDay = {
+  date: string; dow: string; type: string; label: string; duration: string; note: string
+}
+
+const INITIAL_WORKOUT_DAYS: WorkoutDay[] = [
+  { date: "Mon 20 Apr", dow: "Mon", type: "rest",     label: "Rest",            duration: "—",     note: "Active recovery only. Hold-intensity corrector day 4." },
+  { date: "Tue 21 Apr", dow: "Tue", type: "zone2",    label: "Zone-2 run",      duration: "45 min", note: "HR 120–135 bpm. Richmond Park. Fasted ok." },
+  { date: "Wed 22 Apr", dow: "Wed", type: "test",     label: "DEXA + VO₂max",   duration: "90 min", note: "Fasted from 20:30 Tue. West Clinic 08:30." },
+  { date: "Thu 23 Apr", dow: "Thu", type: "mobility", label: "Mobility + breath", duration: "20 min", note: "Pre-offsite. 4-7-8 protocol." },
+  { date: "Fri 24 Apr", dow: "Fri", type: "rest",     label: "Rest",            duration: "—",     note: "Offsite — hold protocol. Protect sleep onset." },
+]
+
+const TYPE_OPTIONS = ["rest", "zone2", "mobility", "lactate", "test", "recovery"]
+const TYPE_LABELS: Record<string, string> = {
+  rest: "Rest", zone2: "Zone-2", mobility: "Mobility", lactate: "Lactate", test: "Testing", recovery: "Recovery"
+}
+const TYPE_COLOR: Record<string, string> = {
+  rest: T.ink4, zone2: T.ok, mobility: T.accent, lactate: T.warn, test: T.ink2, recovery: T.ok
+}
+
+function WorkoutRecommendationCard() {
+  const [lifecycle, setLifecycle] = useState<"draft" | "approved" | "pushed">("draft")
+  const [days, setDays] = useState<WorkoutDay[]>(INITIAL_WORKOUT_DAYS)
+  const [editingDay, setEditingDay] = useState<number | null>(null)
+  const [editBuf, setEditBuf] = useState<Partial<WorkoutDay>>({})
+  const [toast, setToast] = useState<string | null>(null)
+
+  function showToast(msg: string) {
+    setToast(msg)
+    setTimeout(() => setToast(null), 3500)
+  }
+
+  function startEdit(i: number) {
+    setEditingDay(i)
+    setEditBuf({ ...days[i] })
+  }
+
+  function saveEdit(i: number) {
+    setDays(prev => prev.map((d, idx) => idx === i ? { ...d, ...editBuf } as WorkoutDay : d))
+    setEditingDay(null)
+    setEditBuf({})
+  }
+
+  function approve() {
+    setLifecycle("pushed")
+    showToast("Workout block approved and pushed to Jamie's calendar ✓")
+  }
+
+  const borderColor = lifecycle === "draft" ? T.warnMuted : T.okMuted
+  const bgColor     = lifecycle === "draft" ? T.warnSubtle : T.okSubtle
+  const lcLabel     = lifecycle === "draft" ? "Draft · awaiting your review" : "Approved · pushed to Jamie"
+  const lcColor     = lifecycle === "draft" ? T.warn : T.ok
+
+  return (
+    <div style={{ background: T.surface, borderRadius: 12, border: `1px solid ${borderColor}`, overflow: "hidden" }}>
+      {/* Header */}
+      <div style={{ padding: "16px 24px", background: bgColor, borderBottom: `1px solid ${borderColor}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink4, marginBottom: 4 }}>Agent workout recommendation · week of 20 Apr</div>
+          <div style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 600, color: T.ink }}>5-day workout block</div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontFamily: T.sans, fontSize: 11, color: lcColor, fontWeight: 500, background: lifecycle === "draft" ? T.warnSubtle : T.okSubtle, border: `1px solid ${lifecycle === "draft" ? T.warnMuted : T.okMuted}`, padding: "3px 10px", borderRadius: 20 }}>
+            {lcLabel}
+          </span>
+        </div>
+      </div>
+
+      {/* Agent reasoning */}
+      <div style={{ padding: "20px 24px", borderBottom: `1px solid ${T.border}` }}>
+        <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink4, marginBottom: 8, fontWeight: 500 }}>Agent reasoning</div>
+        <p style={{ fontFamily: T.serif, fontSize: 15, fontWeight: 300, lineHeight: 1.75, color: T.ink2, margin: 0, maxWidth: 680 }}>
+          Hold-intensity corrector remains active (day 4). HRV is stable but not recovering — conservative week is appropriate.
+          Wednesday must be rest and fasted for DEXA. Thursday is offsite prep so mobility only. Friday is offsite.
+          Recommending zone-2 Tuesday, then rest Friday, with full reassessment after DEXA results land Wednesday afternoon.
+        </p>
+      </div>
+
+      {/* Day rows */}
+      <div>
+        {days.map((day, i) => {
+          const isEditing = editingDay === i
+          const col = TYPE_COLOR[day.type] ?? T.ink3
+          return (
+            <div key={day.date} style={{ borderBottom: i < days.length - 1 ? `1px solid ${T.border}` : undefined }}>
+              {isEditing ? (
+                /* Edit mode */
+                <div style={{ padding: "14px 24px", background: T.surfaceRaised, display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                    <span style={{ fontFamily: T.mono, fontSize: 12, color: T.ink4, width: 80 }}>{day.date}</span>
+                    <select
+                      value={editBuf.type ?? day.type}
+                      onChange={e => setEditBuf(b => ({ ...b, type: e.target.value, label: TYPE_LABELS[e.target.value] }))}
+                      style={{ fontFamily: T.sans, fontSize: 13, background: T.surface, border: `1px solid ${T.borderMed}`, color: T.ink, padding: "5px 10px", borderRadius: 6, cursor: "pointer" }}
+                    >
+                      {TYPE_OPTIONS.map(t => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
+                    </select>
+                    <input
+                      value={editBuf.duration ?? day.duration}
+                      onChange={e => setEditBuf(b => ({ ...b, duration: e.target.value }))}
+                      placeholder="Duration"
+                      style={{ fontFamily: T.sans, fontSize: 13, background: T.surface, border: `1px solid ${T.borderMed}`, color: T.ink, padding: "5px 10px", borderRadius: 6, width: 100 }}
+                    />
+                  </div>
+                  <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                    <input
+                      value={editBuf.note ?? day.note}
+                      onChange={e => setEditBuf(b => ({ ...b, note: e.target.value }))}
+                      style={{ flex: 1, fontFamily: T.sans, fontSize: 13, background: T.surface, border: `1px solid ${T.borderMed}`, color: T.ink, padding: "5px 10px", borderRadius: 6 }}
+                    />
+                    <button onClick={() => saveEdit(i)} style={{ fontFamily: T.sans, fontSize: 12, fontWeight: 600, border: "none", background: T.ok, color: T.bg, padding: "6px 14px", cursor: "pointer", borderRadius: 6 }}>Save</button>
+                    <button onClick={() => setEditingDay(null)} style={{ fontFamily: T.sans, fontSize: 12, border: `1px solid ${T.borderMed}`, background: "transparent", color: T.ink3, padding: "6px 12px", cursor: "pointer", borderRadius: 6 }}>Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                /* View mode */
+                <div style={{ padding: "12px 24px", display: "flex", alignItems: "center", gap: 16 }}>
+                  <span style={{ fontFamily: T.mono, fontSize: 12, color: T.ink4, width: 80, flexShrink: 0 }}>{day.date}</span>
+                  <span style={{ fontFamily: T.sans, fontSize: 12, fontWeight: 600, color: col, width: 120, flexShrink: 0 }}>{day.label}</span>
+                  <span style={{ fontFamily: T.mono, fontSize: 12, color: T.ink4, width: 60, flexShrink: 0 }}>{day.duration}</span>
+                  <span style={{ flex: 1, fontFamily: T.sans, fontSize: 12, color: T.ink3, lineHeight: 1.4 }}>{day.note}</span>
+                  {lifecycle === "draft" && (
+                    <button onClick={() => startEdit(i)} style={{ fontFamily: T.sans, fontSize: 11, border: `1px solid ${T.borderMed}`, color: T.ink4, background: "transparent", padding: "4px 10px", cursor: "pointer", borderRadius: 6, flexShrink: 0 }}>
+                      Edit
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Actions */}
+      <div style={{ padding: "16px 24px", borderTop: `1px solid ${T.border}`, display: "flex", gap: 12, alignItems: "center" }}>
+        {lifecycle === "draft" ? (
+          <>
+            <button onClick={approve} style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 600, border: "none", background: T.ok, color: T.bg, padding: "10px 22px", cursor: "pointer", borderRadius: 8 }}>
+              Approve and push to Jamie →
+            </button>
+            <button style={{ fontFamily: T.sans, fontSize: 13, border: `1px solid ${T.borderMed}`, background: "transparent", color: T.ink2, padding: "10px 18px", cursor: "pointer", borderRadius: 8 }}>
+              Modify
+            </button>
+            <button style={{ fontFamily: T.sans, fontSize: 12, border: "none", background: "transparent", color: T.ink4, padding: "10px 14px", cursor: "pointer" }}>
+              Reject — draft again
+            </button>
+          </>
+        ) : (
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 600, color: T.ok }}>✓ Pushed to Jamie&apos;s calendar</span>
+            <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink4 }}>Jamie&apos;s week plan updated · {DATA.user.today} 07:14</span>
+          </div>
+        )}
+      </div>
+
+      {/* Toast */}
+      {toast && (
+        <div style={{ position: "fixed", bottom: 24, right: 24, background: T.surfaceRaised, border: `1px solid ${T.ok}`, padding: "12px 20px", fontFamily: T.sans, fontSize: 13, color: T.ink2, boxShadow: "0 4px 20px rgba(0,0,0,0.4)", borderRadius: 8, zIndex: 100, maxWidth: 360 }}>
+          <span style={{ color: T.ok, marginRight: 8 }}>✓</span>{toast}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Agent panel (enhanced SOP + chat) ───────────────────────────────────────
 
 interface Msg { role: "agent" | "coach"; text: string; time: string }
 
 const QUICK_ACTIONS = [
-  "Morning briefing",
   "ApoB status",
   "Draft protocol change",
   "Autonomic flag analysis",
@@ -140,9 +335,6 @@ const QUICK_ACTIONS = [
 
 function matchResponse(input: string, router: ReturnType<typeof useRouter>): string {
   const q = input.toLowerCase()
-
-  if (/brief|morning|today|daily/.test(q))
-    return `Morning briefing for Jamie Garis · ${DATA.user.today}\n\nAllostatic Load: 64 (elevated band). Three consecutive nights of incomplete recovery — RHR +4 bpm above 30-day baseline, HRV at 41 ms (−11 vs baseline). Skin temp deviation +0.4°C sustained over 3 nights.\n\nBoard call today at 09:00 — anticipatory stress likely active.\n\nPriority actions: (1) Confirm hold-intensity corrector with Jamie. (2) Schedule 8-min breathing sequence before 14:45 coaching call. (3) Protect sleep onset — no screens after 21:30.\n\nNo dietary changes required. Continue omega-3, berberine, rotating sleep-aid protocol.`
 
   if (/apob|cholesterol|lipid|statin/.test(q))
     return `ApoB trajectory for Jamie Garis:\n\nCurrent: 84 mg/dL · Q3 target: ≤70 mg/dL · 73 days remaining.\n\nQuarterly progression: 108 → 99 → 91 → 84. Consistent −7 mg/dL per quarter when fibre adherence exceeds 89%. At this rate: projected 77 mg/dL by Q3 — still 7 above target.\n\nTo hit ≤70: fibre adherence must reach 94%+, or we need to consider a statin dose adjustment (discuss with Dr. Rao at May 12 consult).\n\nThe cardio protocol (zone-2) correlates r=+0.12 with ApoB delta — fibre is the primary lever (r=+0.74).`
@@ -172,11 +364,64 @@ function matchResponse(input: string, router: ReturnType<typeof useRouter>): str
   return `I've analysed Jamie's latest data. Here's what I see:\n\nAllostatic Load: 64 (elevated). Primary flags: autonomic (HRV −11 ms, day 3 of deficit) and sleep quality (efficiency 82%, deep sleep 54 min). Board-cycle stress is the current context.\n\nNext recommended actions: (1) Confirm today's hold-intensity corrector. (2) Review 3 pending agent drafts. (3) Prepare DEXA retest briefing for Wed 22 Apr.\n\nAsk me about ApoB, protocol changes, the autonomic flag, trends, medical roadmap, or the quarterly report.`
 }
 
+const SOP_SECTIONS = [
+  {
+    id: "overnight",
+    label: "Overnight analysis",
+    status: "complete",
+    items: [
+      { label: "HRV", value: "41 ms", note: "−11 vs 30d baseline · stable, not recovering", color: T.warn },
+      { label: "RHR", value: "52 bpm", note: "+4 vs baseline · 4th consecutive night elevated", color: T.warn },
+      { label: "Skin temp", value: "+0.4°C", note: "Day 3 of deviation · inflammation precursor", color: T.warn },
+      { label: "Sleep efficiency", value: "82%", note: "Below 85% target · deep sleep 54 min", color: T.ink3 },
+    ],
+  },
+  {
+    id: "workout",
+    label: "Workout recommendation",
+    status: "pending",
+    items: [
+      { label: "Block", value: "5 days", note: "Mon rest · Tue zone-2 · Wed DEXA · Thu mobility · Fri rest", color: T.ok },
+      { label: "Corrector", value: "Active", note: "Hold-intensity day 4 · monitor HRV post-DEXA", color: T.warn },
+    ],
+  },
+  {
+    id: "flags",
+    label: "Attention flags",
+    status: "active",
+    items: [
+      { label: "Autonomic", value: "Day 3", note: "HRV + RHR + sTemp · pattern matches Feb setback", color: T.warn },
+      { label: "Glucose", value: "+18 mg/dL", note: "Thu 02:14 · dawn phenomenon likely · observe 1 more night", color: T.warn },
+    ],
+  },
+  {
+    id: "pending",
+    label: "Pending items",
+    status: "action",
+    items: [
+      { label: "Drafts", value: "3", note: "Autonomic flag · glucose excursion · ApoB analysis · awaiting countersign", color: T.warn },
+      { label: "Countersign", value: "Due today", note: "Within 24h SLA · 2 drafts at 22h mark", color: T.warn },
+    ],
+  },
+  {
+    id: "actions",
+    label: "Today's actions",
+    status: "prioritised",
+    items: [
+      { label: "1st", value: "DEXA prep", note: "Confirm Jamie's fasting protocol → Medical roadmap", color: T.warn, href: "/coach/medical" },
+      { label: "2nd", value: "Countersign drafts", note: "3 awaiting review → Compliance", color: T.ok, href: "/coach/compliance" },
+      { label: "3rd", value: "Approve workout block", note: "Push to Jamie's calendar → see card above", color: T.ok },
+    ],
+  },
+]
+
 function AgentPanel() {
   const router = useRouter()
   const now = "07:14"
+  const [sopOpen, setSopOpen] = useState(true)
+  const [openSection, setOpenSection] = useState<string | null>("overnight")
   const [messages, setMessages] = useState<Msg[]>([
-    { role: "agent", time: "06:58", text: `Good morning, Darcy. I've completed Jamie's overnight analysis.\n\nAllostatic Load: 64 (elevated — same band as yesterday). HRV held at 41 ms overnight, no further decline. Skin temp deviation stable at +0.4°C.\n\nYou have 3 drafts awaiting countersignature and a board call on Jamie's calendar at 09:00. The hold-intensity corrector from 17 Apr remains active.\n\nWhat would you like to address first?` },
+    { role: "agent", time: "06:58", text: `Morning briefing complete. Five sections ready for your review above.\n\nTL;DR: HRV stable at 41 ms but not recovering. 3 drafts awaiting your countersignature. Workout block drafted for your approval. DEXA fasting confirmation is the critical action today.\n\nWhat would you like to address first?` },
   ])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
@@ -197,15 +442,68 @@ function AgentPanel() {
   }
 
   return (
-    <div id="agent" style={{ background: T.surface, borderRadius: 12 }}>
-      {/* Head */}
+    <div id="agent" style={{ background: T.surface, borderRadius: 12, overflow: "hidden" }}>
+      {/* Header */}
       <div style={{ padding: "16px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 600, color: T.ink }}>Agent</span>
           <span style={{ fontFamily: T.sans, fontSize: 11, color: T.ok, background: T.okSubtle, padding: "2px 8px", borderRadius: 20, fontWeight: 500 }}>Live · pre-loaded context</span>
         </div>
-        <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3 }}>Ask about Jamie&apos;s data, draft directives, navigate to sections</span>
+        <button
+          onClick={() => setSopOpen(o => !o)}
+          style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3, background: "transparent", border: `1px solid ${T.borderMed}`, padding: "5px 12px", cursor: "pointer", borderRadius: 6 }}
+        >
+          {sopOpen ? "Hide morning SOP" : "Show morning SOP"}
+        </button>
       </div>
+
+      {/* Structured SOP */}
+      {sopOpen && (
+        <div style={{ borderBottom: `1px solid ${T.border}` }}>
+          {SOP_SECTIONS.map((section, si) => {
+            const isOpen = openSection === section.id
+            const statusColor = section.status === "action" ? T.warn : section.status === "active" ? T.warn : T.ok
+            return (
+              <div key={section.id} style={{ borderBottom: si < SOP_SECTIONS.length - 1 ? `1px solid ${T.border}` : undefined }}>
+                <div
+                  onClick={() => setOpenSection(isOpen ? null : section.id)}
+                  style={{ padding: "12px 24px", display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }}
+                >
+                  <span style={{ fontFamily: T.mono, fontSize: 11, color: statusColor, width: 16 }}>⬤</span>
+                  <span style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 500, color: T.ink, flex: 1 }}>
+                    Section {si + 1} — {section.label}
+                  </span>
+                  <span style={{ fontFamily: T.sans, fontSize: 11, color: T.ink4, background: T.surfaceRaised, padding: "2px 8px", borderRadius: 20 }}>
+                    {section.items.length} {section.items.length === 1 ? "item" : "items"}
+                  </span>
+                  <span style={{ fontFamily: T.sans, fontSize: 11, color: T.ink4 }}>{isOpen ? "▲" : "▼"}</span>
+                </div>
+                {isOpen && (
+                  <div style={{ padding: "0 24px 16px 54px", display: "flex", flexDirection: "column", gap: 10 }}>
+                    {section.items.map(item => (
+                      <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                        <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink4, width: 80, flexShrink: 0 }}>{item.label}</span>
+                        <span style={{ fontFamily: T.mono, fontSize: 13, color: item.color, width: 80, flexShrink: 0 }}>{item.value}</span>
+                        <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3, flex: 1, lineHeight: 1.4 }}>
+                          {item.note}
+                          {(item as { href?: string }).href && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); router.push((item as { href: string }).href) }}
+                              style={{ fontFamily: T.sans, fontSize: 11, color: T.accent, background: "transparent", border: "none", cursor: "pointer", marginLeft: 8 }}
+                            >
+                              →
+                            </button>
+                          )}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* Quick actions */}
       <div style={{ padding: "12px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -217,7 +515,7 @@ function AgentPanel() {
       </div>
 
       {/* Messages */}
-      <div style={{ height: 320, overflowY: "auto", padding: "16px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
+      <div style={{ height: 280, overflowY: "auto", padding: "16px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
         {messages.map((m, i) => (
           <div key={i} style={{ display: "flex", flexDirection: m.role === "coach" ? "row-reverse" : "row", gap: 10, alignItems: "flex-start" }}>
             <div style={{ width: 28, height: 28, borderRadius: "50%", background: m.role === "agent" ? T.surfaceRaised : T.ok, border: `1px solid ${m.role === "agent" ? T.borderMed : T.ok}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: T.sans, fontSize: 11, fontWeight: 600, color: m.role === "agent" ? T.ok : T.bg }}>
@@ -272,6 +570,7 @@ function WorkflowCommand() {
       urgency: "critical",
       label: "DEXA + VO₂max retest",
       sub: "Wed 22 Apr · 2 days · West Clinic 08:30",
+      due: "by Tue 21 Apr",
       cta: "Confirm fasting protocol",
       link: { label: "Medical roadmap", href: "/coach/medical" },
       color: T.warn,
@@ -282,8 +581,9 @@ function WorkflowCommand() {
       urgency: "high",
       label: `${pendingDrafts} drafts awaiting your countersignature`,
       sub: "Autonomic flag · glucose excursion · ApoB analysis",
+      due: "by today",
       cta: "Review drafts",
-      link: { label: "Trends", href: "/coach/trends" },
+      link: { label: "Compliance", href: "/coach/compliance" },
       color: T.warn,
       detail: "3 drafts ready: hold-intensity corrector, caffeine-sleep insight, overnight glucose flag. All need your review before they reach Jamie.",
     },
@@ -292,8 +592,9 @@ function WorkflowCommand() {
       urgency: "active",
       label: activeCorrectors[0]?.recommendation ?? "Hold-intensity corrector active",
       sub: "Issued 17 Apr · day 3 · monitoring HRV recovery",
+      due: "ongoing",
       cta: "Check overnight data",
-      link: { label: "Compliance", href: "/coach/compliance" },
+      link: { label: "Trends", href: "/coach/trends" },
       color: T.accent,
       detail: "HRV stable at 41 ms — no further decline overnight. RHR still +4 bpm. Maintain hold through Wednesday, reassess post-DEXA retest.",
     },
@@ -302,8 +603,9 @@ function WorkflowCommand() {
       urgency: "upcoming",
       label: "Quarterly protocol review",
       sub: "Tue 29 Apr · 9 days · in person · 60 min",
+      due: "by Mon 28 Apr",
       cta: "Prepare agenda",
-      link: { label: "Medical", href: "/coach/medical" },
+      link: { label: "Prepare review ↓", href: "#quarterly" },
       color: T.ok,
       detail: "Topics: DEXA/VO₂max results, Q2 ApoB trajectory, fibrinogen watch, pre-quarter taper protocol, July board-cycle load plan.",
     },
@@ -349,10 +651,13 @@ function WorkflowCommand() {
                   <div style={{ flex: 1, padding: "11px 16px", display: "flex", alignItems: "center", gap: 14 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontFamily: T.sans, fontSize: 13, color: done ? T.ink3 : T.ink, marginBottom: 1, textDecoration: done ? "line-through" : "none", fontWeight: 500 }}>{action.label}</div>
-                      <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink4 }}>{action.sub}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink4 }}>{action.sub}</span>
+                        <span style={{ fontFamily: T.mono, fontSize: 11, color: action.due === "by today" ? T.warn : T.ink4, background: T.surfaceRaised, padding: "1px 7px", borderRadius: 10 }}>{action.due}</span>
+                      </div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                      <button onClick={() => router.push(action.link.href)} style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3, background: "transparent", border: "none", cursor: "pointer", padding: "4px 0" }}>
+                      <button onClick={() => action.link.href.startsWith("#") ? undefined : router.push(action.link.href)} style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3, background: "transparent", border: "none", cursor: "pointer", padding: "4px 0" }}>
                         {action.link.label} →
                       </button>
                       <button onClick={() => setExpandedAction(isExpanded ? null : action.id)} style={{ fontFamily: T.sans, fontSize: 12, color: T.ink4, background: "transparent", border: "none", cursor: "pointer", padding: "4px" }}>
@@ -384,14 +689,10 @@ function WorkflowCommand() {
 
       {/* Cycle position + system status */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
-
-        {/* Where you are in the cycle */}
         <div style={{ padding: "18px 24px", borderRight: `1px solid ${T.border}` }}>
           <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink4, marginBottom: 14, fontWeight: 500 }}>
             Where you are · Q2 2026
           </div>
-
-          {/* Phase track */}
           <div style={{ display: "flex", gap: 0, alignItems: "flex-start", marginBottom: 12 }}>
             {phases.map((ph, i) => {
               const color = ph.done ? T.ok : ph.upcoming ? T.warn : T.border
@@ -415,8 +716,6 @@ function WorkflowCommand() {
               )
             })}
           </div>
-
-          {/* Next step callout */}
           {nextAfterUpcoming && (
             <div style={{ borderLeft: `2px solid ${T.borderMed}`, paddingLeft: 10 }}>
               <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink4, marginBottom: 2 }}>Next milestone after remeasurement</div>
@@ -424,8 +723,6 @@ function WorkflowCommand() {
             </div>
           )}
         </div>
-
-        {/* System status */}
         <div style={{ padding: "18px 24px" }}>
           <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink4, marginBottom: 12, fontWeight: 500 }}>System status</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
@@ -449,7 +746,18 @@ function WorkflowCommand() {
 
 interface ToastMsg { id: number; text: string }
 
+const ITEM_DUE: Record<string, string> = {
+  cp1: "by Fri 25 Apr",
+  cp3: "by Tue 29 Apr",
+  cp4: "by Thu 24 Apr",
+  cd2: "by today",
+  cd4: "by Wed 23 Apr",
+  jcp1: "Wed 22 Apr",
+  jcp3: "by 02 Jul",
+}
+
 function JTBDWithActions() {
+  const router = useRouter()
   const [collapsed, setCollapsed] = useState(true)
   const [checked, setChecked] = useState<Record<string, boolean>>(
     Object.fromEntries([
@@ -467,22 +775,22 @@ function JTBDWithActions() {
     setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 3500)
   }
 
-  const TASK_ACTIONS: Record<string, { label: string; msg: string; color: string }> = {
+  const TASK_ACTIONS: Record<string, { label: string; msg: string; color: string; href?: string }> = {
     cp1: { label: "Generate draft",    msg: "Protocol adjustment draft created — review in agent",       color: T.ok },
-    cp2: { label: "View adherence",    msg: "Fibre log: 6/7 days this week · 86% — below 89% target",   color: T.warn },
+    cp2: { label: "View adherence",    msg: "Fibre log: 6/7 days this week · 86% — below 89% target",   color: T.warn, href: "/coach/compliance" },
     cp3: { label: "Generate draft",    msg: "Pre-quarter taper draft queued in agent inbox",              color: T.ok },
-    cp4: { label: "Schedule review",   msg: "DEXA review meeting added — Thu 24 Apr 10:00",              color: T.ok },
+    cp4: { label: "Schedule review",   msg: "DEXA review meeting added — Thu 24 Apr 10:00",              color: T.ok, href: "/coach/medical" },
     cd1: { label: "Open inbox",        msg: "3 flags from overnight analysis — opening agent",            color: T.warn },
-    cd2: { label: "Open drafts",       msg: "3 drafts awaiting countersignature",                        color: T.warn },
+    cd2: { label: "Open drafts",       msg: "3 drafts awaiting countersignature",                        color: T.warn, href: "/coach/compliance" },
     cd3: { label: "Publish directive", msg: "Morning directive pushed to Jamie's dashboard ✓",           color: T.ok },
     cd4: { label: "Log notes",         msg: "Call notes form opened — Wed 15:00 session",                color: T.ok },
     jcp1: { label: "Push reminder",   msg: "Fasting reminder sent to Jamie — DEXA 22 Apr 08:30",        color: T.ok },
-    jcp2: { label: "View log",        msg: "Jamie's fibre log: 6/7 days this week",                     color: T.ink2 },
+    jcp2: { label: "View log",        msg: "Jamie's fibre log: 6/7 days this week",                     color: T.ink2, href: "/coach/compliance" },
     jcp3: { label: "Update target",   msg: "ApoB target updated on Jamie's dashboard",                  color: T.ok },
-    jcp4: { label: "View minutes",    msg: "Zone-2: 82 of 160 min this week · 3 sessions left",         color: T.warn },
-    jcd1: { label: "View check-in",   msg: "Jamie's check-in: 14-day streak · last submitted 06:42",    color: T.ok },
+    jcp4: { label: "View minutes",    msg: "Zone-2: 82 of 160 min this week · 3 sessions left",         color: T.warn, href: "/coach/trends" },
+    jcd1: { label: "View check-in",   msg: "Jamie's check-in: 14-day streak · last submitted 06:42",    color: T.ok, href: "/coach/compliance" },
     jcd2: { label: "Send reminder",   msg: "Evening fibre log reminder scheduled for 20:00",            color: T.ok },
-    jcd3: { label: "View log",        msg: "Breathing protocol logged 2× this week",                    color: T.ok },
+    jcd3: { label: "View log",        msg: "Breathing protocol logged 2× this week",                    color: T.ok, href: "/coach/compliance" },
     jcd4: { label: "Push directive",  msg: "Today's directive pushed to Jamie · 06:14 ✓",              color: T.ok },
   }
 
@@ -499,13 +807,19 @@ function JTBDWithActions() {
         </div>
         {items.map(item => {
           const action = TASK_ACTIONS[item.id]
+          const due = ITEM_DUE[item.id]
           return (
-            <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-              <input type="checkbox" checked={checked[item.id] ?? false} onChange={() => setChecked(p => ({ ...p, [item.id]: !p[item.id] }))} style={{ accentColor: color, flexShrink: 0 }} />
-              <span style={{ flex: 1, fontFamily: T.sans, fontSize: 13, color: checked[item.id] ? T.ink3 : T.ink, lineHeight: 1.4, textDecoration: checked[item.id] ? "line-through" : "none" }}>{item.text}</span>
+            <div key={item.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
+              <input type="checkbox" checked={checked[item.id] ?? false} onChange={() => setChecked(p => ({ ...p, [item.id]: !p[item.id] }))} style={{ accentColor: color, flexShrink: 0, marginTop: 2 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: T.sans, fontSize: 13, color: checked[item.id] ? T.ink3 : T.ink, lineHeight: 1.4, textDecoration: checked[item.id] ? "line-through" : "none" }}>{item.text}</div>
+                {due && !checked[item.id] && (
+                  <div style={{ fontFamily: T.mono, fontSize: 11, color: due === "by today" ? T.warn : T.ink4, marginTop: 2 }}>{due}</div>
+                )}
+              </div>
               {action && (
                 <button
-                  onClick={() => toast(action.msg)}
+                  onClick={() => { toast(action.msg); if (action.href) setTimeout(() => router.push(action.href!), 400) }}
                   style={{ fontFamily: T.sans, fontSize: 11, border: `1px solid ${action.color}`, color: action.color, padding: "3px 10px", background: "transparent", cursor: "pointer", flexShrink: 0, borderRadius: 6 }}
                 >
                   {action.label}
@@ -530,7 +844,7 @@ function JTBDWithActions() {
           )}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          {!collapsed && <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3 }}>Action buttons push to dashboard or generate outputs</span>}
+          {!collapsed && <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3 }}>Due dates · deep links to relevant pages</span>}
           <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3 }}>{collapsed ? "▼" : "▲"}</span>
         </div>
       </div>
@@ -548,7 +862,6 @@ function JTBDWithActions() {
             </div>
           </div>
 
-          {/* Toast stack */}
           <div style={{ position: "fixed", bottom: 24, right: 24, display: "flex", flexDirection: "column", gap: 8, zIndex: 100 }}>
             {toasts.map(t => (
               <div key={t.id} style={{ background: T.surfaceRaised, border: `1px solid ${T.ok}`, padding: "10px 16px", fontFamily: T.sans, fontSize: 13, color: T.ink2, maxWidth: 340, boxShadow: "0 4px 20px rgba(0,0,0,0.4)", borderRadius: 8 }}>
@@ -562,51 +875,206 @@ function JTBDWithActions() {
   )
 }
 
+// ─── Quarterly review questionnaire ──────────────────────────────────────────
+
+const REVIEW_STEPS = [
+  {
+    id: "worked",
+    title: "What worked well this quarter?",
+    placeholder: "e.g. Sleep protocol, ApoB trajectory, fibre adherence…",
+    hint: "Focus on outcomes that moved in the right direction and the levers behind them.",
+  },
+  {
+    id: "missed",
+    title: "What didn't land or was missed?",
+    placeholder: "e.g. HRV floor target, zone-2 volume, autonomic resilience…",
+    hint: "Be specific — what was the gap and what contributed to it?",
+  },
+  {
+    id: "targets",
+    title: "Proposed targets for next quarter",
+    placeholder: "e.g. ApoB ≤ 70 mg/dL, HRV floor 48 ms, zone-2 ≥ 160 min/week…",
+    hint: "Numeric where possible. Consider what's achievable given Jamie's schedule.",
+  },
+  {
+    id: "protocol",
+    title: "Protocol changes to carry forward",
+    placeholder: "e.g. Pre-quarter taper for July board cycle, fibrinogen retest, statin review…",
+    hint: "What adjustments should be formalised as directives or correctors?",
+  },
+]
+
+function PrepareQuarterlyReviewModal({ onClose }: { onClose: () => void }) {
+  const [step, setStep] = useState(0)
+  const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [done, setDone] = useState(false)
+
+  const current = REVIEW_STEPS[step]
+  const isLast = step === REVIEW_STEPS.length - 1
+
+  function next() {
+    if (isLast) { setDone(true) }
+    else setStep(s => s + 1)
+  }
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200 }}
+      onClick={onClose}>
+      <div style={{ background: T.surface, border: `1px solid ${T.borderMed}`, padding: "32px 36px", maxWidth: 560, width: "90%", borderRadius: 14, boxShadow: "0 8px 48px rgba(0,0,0,0.5)" }}
+        onClick={e => e.stopPropagation()}>
+
+        {done ? (
+          <>
+            <div style={{ fontFamily: T.sans, fontSize: 11, fontWeight: 600, color: T.ok, marginBottom: 16 }}>Quarterly review prepared</div>
+            <p style={{ fontFamily: T.serif, fontSize: 16, fontWeight: 300, lineHeight: 1.7, color: T.ink, margin: "0 0 20px" }}>
+              Your review notes have been drafted and queued for the Tue 29 Apr session.
+              Jamie will not see these until you choose to share the output.
+            </p>
+            <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3, marginBottom: 24 }}>
+              {Object.keys(answers).length} of {REVIEW_STEPS.length} sections completed · saved as draft
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button onClick={onClose} style={{ fontFamily: T.sans, fontSize: 13, border: "none", background: T.ok, color: T.bg, padding: "9px 20px", cursor: "pointer", borderRadius: 8, fontWeight: 500 }}>
+                Done
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Progress */}
+            <div style={{ display: "flex", gap: 4, marginBottom: 24 }}>
+              {REVIEW_STEPS.map((s, i) => (
+                <div key={s.id} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= step ? T.ok : T.border }} />
+              ))}
+            </div>
+
+            <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink4, marginBottom: 8 }}>
+              Step {step + 1} of {REVIEW_STEPS.length} · Prepare quarterly review · Q2 2026
+            </div>
+            <div style={{ fontFamily: T.sans, fontSize: 15, fontWeight: 600, color: T.ink, marginBottom: 6 }}>
+              {current.title}
+            </div>
+            <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3, marginBottom: 16, lineHeight: 1.5 }}>
+              {current.hint}
+            </div>
+            <textarea
+              value={answers[current.id] ?? ""}
+              onChange={e => setAnswers(a => ({ ...a, [current.id]: e.target.value }))}
+              placeholder={current.placeholder}
+              rows={4}
+              style={{
+                width: "100%", fontFamily: T.sans, fontSize: 13, color: T.ink, lineHeight: 1.6,
+                background: T.surfaceRaised, border: `1px solid ${T.borderMed}`, padding: "10px 14px",
+                borderRadius: 8, outline: "none", resize: "vertical", boxSizing: "border-box",
+              }}
+            />
+            <div style={{ display: "flex", gap: 10, justifyContent: "space-between", marginTop: 20 }}>
+              <button
+                onClick={onClose}
+                style={{ fontFamily: T.sans, fontSize: 13, border: `1px solid ${T.borderMed}`, padding: "8px 16px", color: T.ink3, background: "transparent", cursor: "pointer", borderRadius: 6 }}
+              >
+                Save and close
+              </button>
+              <div style={{ display: "flex", gap: 10 }}>
+                {step > 0 && (
+                  <button onClick={() => setStep(s => s - 1)} style={{ fontFamily: T.sans, fontSize: 13, border: `1px solid ${T.borderMed}`, padding: "8px 16px", color: T.ink2, background: "transparent", cursor: "pointer", borderRadius: 6 }}>
+                    Back
+                  </button>
+                )}
+                <button onClick={next} style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 600, border: "none", background: T.ok, color: T.bg, padding: "8px 20px", cursor: "pointer", borderRadius: 6 }}>
+                  {isLast ? "Complete review" : "Next →"}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── Quarterly history ────────────────────────────────────────────────────────
 
 function QuarterlyHistory() {
   const [open, setOpen] = useState<string | null>(null)
   const [panelCollapsed, setPanelCollapsed] = useState(true)
+  const [showReviewModal, setShowReviewModal] = useState(false)
+
   return (
-    <div style={{ background: T.surface, borderRadius: 12 }}>
+    <div id="quarterly" style={{ background: T.surface, borderRadius: 12 }}>
       <div onClick={() => setPanelCollapsed(c => !c)} style={{ padding: "16px 24px", borderBottom: panelCollapsed ? undefined : `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
         <span style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 600, color: T.ink }}>Quarterly history</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          {!panelCollapsed && <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3 }}>End-of-quarter reports · growing timeline</span>}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {!panelCollapsed && (
+            <button
+              onClick={e => { e.stopPropagation(); setShowReviewModal(true) }}
+              style={{ fontFamily: T.sans, fontSize: 12, fontWeight: 600, border: "none", background: T.ok, color: T.bg, padding: "6px 14px", cursor: "pointer", borderRadius: 6 }}
+            >
+              Prepare quarterly review →
+            </button>
+          )}
           <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3 }}>{panelCollapsed ? "▼" : "▲"}</span>
         </div>
       </div>
-      {!panelCollapsed && QUARTER_HISTORY.map((q, i) => (
-        <div key={q.id} style={{ borderTop: i > 0 ? `1px solid ${T.border}` : undefined }}>
-          <div onClick={() => setOpen(open === q.id ? null : q.id)} style={{ padding: "14px 24px", display: "flex", alignItems: "center", gap: 16, cursor: "pointer" }}>
-            <div style={{ width: 10, height: 10, borderRadius: "50%", background: q.status === "active" ? T.ok : q.status === "closed" ? T.ink3 : T.border, flexShrink: 0 }} />
-            <div style={{ flex: 1 }}>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 2 }}>
-                <span style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 600, color: T.ink }}>{q.label}</span>
-                <span style={{ fontFamily: T.sans, fontSize: 12, color: q.status === "active" ? T.ok : T.ink4 }}>
-                  {q.status === "active" ? `Active · day ${q.daysIn}` : q.status === "closed" ? `Closed ${q.closedOn}` : `Archived ${q.closedOn}`}
-                </span>
-              </div>
-              <div style={{ fontFamily: T.sans, fontSize: 13, color: T.ink3, lineHeight: 1.4 }}>{q.summary}</div>
-            </div>
-            {q.status !== "active" && (
-              <a href="#" onClick={e => e.preventDefault()} style={{ fontFamily: T.sans, fontSize: 12, color: T.accent, border: `1px solid ${T.accent}`, padding: "4px 10px", flexShrink: 0, borderRadius: 6, textDecoration: "none" }}>
-                View report →
-              </a>
-            )}
-            <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3 }}>{open === q.id ? "▲" : "▼"}</span>
-          </div>
-          {open === q.id && q.highlights && (
-            <div style={{ padding: "0 24px 16px 50px" }}>
-              {q.highlights.map(h => (
-                <div key={h} style={{ fontFamily: T.sans, fontSize: 13, color: h.includes("✓") ? T.ok : h.includes("↑") || h.includes("missed") || h.includes("watch") ? T.warn : T.ink2, marginBottom: 4 }}>
-                  · {h}
+
+      {!panelCollapsed && (
+        <>
+          {/* Active quarter with CTA */}
+          <div style={{ padding: "16px 24px", borderBottom: `1px solid ${T.border}`, background: T.okSubtle }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{ width: 10, height: 10, borderRadius: "50%", background: T.ok, flexShrink: 0 }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 4 }}>
+                  <span style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 600, color: T.ink }}>Q2 2026</span>
+                  <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ok }}>Active · day 20</span>
                 </div>
-              ))}
+                <div style={{ fontFamily: T.sans, fontSize: 13, color: T.ink3, lineHeight: 1.4, maxWidth: 500 }}>
+                  ApoB trajectory positive. Autonomic flag active since 17 Apr. DEXA retest due 22 Apr. Quarterly review scheduled Tue 29 Apr.
+                </div>
+              </div>
+              <button
+                onClick={() => setShowReviewModal(true)}
+                style={{ fontFamily: T.sans, fontSize: 12, fontWeight: 500, border: `1px solid ${T.ok}`, color: T.ok, background: "transparent", padding: "7px 14px", cursor: "pointer", borderRadius: 8, flexShrink: 0 }}
+              >
+                Prepare review →
+              </button>
             </div>
-          )}
-        </div>
-      ))}
+          </div>
+
+          {/* Previous quarters */}
+          {QUARTER_HISTORY.filter(q => q.status !== "active").map((q, i) => (
+            <div key={q.id} style={{ borderTop: `1px solid ${T.border}` }}>
+              <div onClick={() => setOpen(open === q.id ? null : q.id)} style={{ padding: "14px 24px", display: "flex", alignItems: "center", gap: 16, cursor: "pointer" }}>
+                <div style={{ width: 10, height: 10, borderRadius: "50%", background: q.status === "closed" ? T.ink3 : T.border, flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 2 }}>
+                    <span style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 600, color: T.ink }}>{q.label}</span>
+                    <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink4 }}>
+                      {q.status === "closed" ? `Closed ${q.closedOn}` : `Archived ${q.closedOn}`}
+                    </span>
+                  </div>
+                  <div style={{ fontFamily: T.sans, fontSize: 13, color: T.ink3, lineHeight: 1.4 }}>{q.summary}</div>
+                </div>
+                <a href="#" onClick={e => e.preventDefault()} style={{ fontFamily: T.sans, fontSize: 12, color: T.accent, border: `1px solid ${T.accent}`, padding: "4px 10px", flexShrink: 0, borderRadius: 6, textDecoration: "none" }}>
+                  View report →
+                </a>
+                <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3 }}>{open === q.id ? "▲" : "▼"}</span>
+              </div>
+              {open === q.id && q.highlights && (
+                <div style={{ padding: "0 24px 16px 50px" }}>
+                  {q.highlights.map(h => (
+                    <div key={h} style={{ fontFamily: T.sans, fontSize: 13, color: h.includes("✓") ? T.ok : h.includes("↑") || h.includes("missed") || h.includes("watch") || h.includes("↗") ? T.warn : T.ink2, marginBottom: 4 }}>
+                      · {h}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </>
+      )}
+
+      {showReviewModal && <PrepareQuarterlyReviewModal onClose={() => setShowReviewModal(false)} />}
     </div>
   )
 }
@@ -620,7 +1088,7 @@ export default function CoachCommandPage() {
   const [reportDone, setReportDone] = useState(false)
 
   return (
-    <div style={{ padding: "48px 48px 80px", maxWidth: 1200, margin: "0 auto", display: "flex", flexDirection: "column", gap: 56 }}>
+    <div style={{ padding: "48px 48px 80px", maxWidth: 1200, margin: "0 auto", display: "flex", flexDirection: "column", gap: 32 }}>
 
       {/* Page header */}
       <div>
@@ -646,7 +1114,9 @@ export default function CoachCommandPage() {
         </div>
       </div>
 
+      <SinceLastVisit />
       <DecisionLayer />
+      <WorkoutRecommendationCard />
       <AgentPanel />
       <WorkflowCommand />
       <JTBDWithActions />
