@@ -18,20 +18,27 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | null>(null)
 
 export function AppProviders({ children }: { children: ReactNode }) {
+  // Role is always set by the sidebar (ClientSidebar → "james", CoachSidebar → "darcy").
+  // Do NOT read role from localStorage on mount — that causes a hydration mismatch
+  // because SSR renders "james" but the client may have stored "darcy".
   const [role, setRole] = useState<Role>("james")
   const [accent, setAccent] = useState<Accent>("amber")
   const [theme, setTheme] = useState<Theme>("dark")
 
+  // Read accent + theme from localStorage after hydration (SSR-safe: these affect
+  // visual styling, not DOM structure, so a one-frame flash is acceptable)
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      setRole((localStorage.getItem("al_role") as Role) || "james")
-      setAccent((localStorage.getItem("al_accent") as Accent) || "amber")
-      setTheme((localStorage.getItem("al_theme") as Theme) || "dark")
-    }
+    const savedAccent = localStorage.getItem("al_accent") as Accent | null
+    const savedTheme  = localStorage.getItem("al_theme")  as Theme  | null
+    if (savedAccent) setAccent(savedAccent)
+    if (savedTheme)  setTheme(savedTheme)
   }, [])
 
+  // Persist and apply to DOM
   useEffect(() => {
     localStorage.setItem("al_role", role)
+    localStorage.setItem("al_accent", accent)
+    localStorage.setItem("al_theme", theme)
     document.documentElement.setAttribute("data-theme", theme)
     document.documentElement.setAttribute("data-accent", accent)
   }, [role, accent, theme])

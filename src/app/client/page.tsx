@@ -191,7 +191,7 @@ export default function ClientDashboard() {
             The emotional anchor — one narrative, one number.
         ═══════════════════════════════════════════════════════════════ */}
 
-        <div style={{
+        <div className="morning-card-inner" style={{
           display: "grid", gridTemplateColumns: "1fr auto",
           gap: 48, alignItems: "start", marginBottom: 56,
         }}>
