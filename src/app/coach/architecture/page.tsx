@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { T } from "@/components/Primitives"
 
 // ─── Data model ────────────────────────────────────────────────────────────────
 
@@ -24,30 +25,30 @@ interface ArchEdge {
 
 const NODES: ArchNode[] = [
   // Data sources
-  { id: "wearable",   kind: "data",   label: "Wearables",         sublabel: "Whoop · Oura" },
-  { id: "cgm",        kind: "data",   label: "CGM",               sublabel: "Levels / Dexcom" },
-  { id: "bloodwork",  kind: "data",   label: "Lab results",       sublabel: "Quarterly bloods" },
-  { id: "rpe",        kind: "data",   label: "RPE / Mood",        sublabel: "Manual check-in" },
+  { id: "wearable",   kind: "data",   label: "Wearables",              sublabel: "Whoop · Oura" },
+  { id: "cgm",        kind: "data",   label: "CGM",                    sublabel: "Levels / Dexcom" },
+  { id: "bloodwork",  kind: "data",   label: "Lab results",            sublabel: "Quarterly bloods" },
+  { id: "rpe",        kind: "data",   label: "RPE / Mood",             sublabel: "Manual check-in" },
 
   // Processing
   { id: "irt",        kind: "agent",  label: "Allostatic Load Engine", sublabel: "IRT-based scoring" },
-  { id: "agent",      kind: "agent",  label: "AI Agent",          sublabel: "Pattern · Brief · Draft" },
+  { id: "agent",      kind: "agent",  label: "AI Agent",               sublabel: "Pattern · Brief · Draft" },
 
   // Coach product
-  { id: "command",    kind: "coach",  label: "Command Centre",    sublabel: "/coach/command" },
-  { id: "trends_c",   kind: "coach",  label: "Trends",            sublabel: "/coach/trends" },
-  { id: "medical_c",  kind: "coach",  label: "Medical Roadmap",   sublabel: "/coach/medical" },
-  { id: "strategy",   kind: "coach",  label: "Quarterly Strategy", sublabel: "Editable doc" },
+  { id: "command",    kind: "coach",  label: "Command Centre",         sublabel: "/coach/command" },
+  { id: "trends_c",   kind: "coach",  label: "Trends",                 sublabel: "/coach/trends" },
+  { id: "medical_c",  kind: "coach",  label: "Medical Roadmap",        sublabel: "/coach/medical" },
+  { id: "strategy",   kind: "coach",  label: "Quarterly Strategy",     sublabel: "Editable doc" },
 
   // Client product
-  { id: "dashboard",  kind: "client", label: "Jamie Dashboard",   sublabel: "/client" },
-  { id: "checkin",    kind: "client", label: "Check-in",          sublabel: "/client/checkin" },
-  { id: "directive",  kind: "client", label: "Directives",        sublabel: "Pushed to dashboard" },
-  { id: "command_j",  kind: "client", label: "Command (read)",    sublabel: "/client/command" },
+  { id: "dashboard",  kind: "client", label: "Jamie Dashboard",        sublabel: "/client" },
+  { id: "checkin",    kind: "client", label: "Check-in",               sublabel: "/client/checkin" },
+  { id: "directive",  kind: "client", label: "Directives",             sublabel: "Pushed to dashboard" },
+  { id: "command_j",  kind: "client", label: "Command (read)",         sublabel: "/client/command" },
 
   // Outputs
-  { id: "report",     kind: "output", label: "Quarterly Report",  sublabel: "Archived PDF link" },
-  { id: "notify",     kind: "output", label: "Notification",      sublabel: "Push / email" },
+  { id: "report",     kind: "output", label: "Quarterly Report",       sublabel: "Archived PDF link" },
+  { id: "notify",     kind: "output", label: "Notification",           sublabel: "Push / email" },
 ]
 
 const EDGES: ArchEdge[] = [
@@ -113,7 +114,7 @@ const EDGES: ArchEdge[] = [
   },
   {
     from: "command", to: "report", kind: "generate",
-    label: "End-of-quarter",
+    label: "End of quarter",
     description: "At quarter close, the system snapshots the dashboard, results, and strategy doc into an archived report link.",
   },
   {
@@ -141,40 +142,30 @@ const EDGES: ArchEdge[] = [
 // ─── Colour helpers ─────────────────────────────────────────────────────────
 
 const KIND_COLOR: Record<NodeKind, string> = {
-  client: "var(--accent)",
-  coach:  "var(--ok)",
+  client: T.accent,
+  coach:  T.ok,
   data:   "#8FA0B3",
   agent:  "#9B8FA9",
   output: "#C8A56A",
 }
 const KIND_BG: Record<NodeKind, string> = {
-  client: "rgba(127,169,155,0.08)",
+  client: "rgba(200,165,106,0.08)",
   coach:  "rgba(127,169,155,0.08)",
   data:   "rgba(143,160,179,0.08)",
   agent:  "rgba(155,143,169,0.08)",
   output: "rgba(200,165,106,0.08)",
 }
 const EDGE_COLOR: Record<EdgeKind, string> = {
-  sync:     "var(--accent)",
-  review:   "var(--ok)",
+  sync:     T.accent,
+  review:   T.ok,
   generate: "#9B8FA9",
-  alert:    "var(--alert)",
+  alert:    T.alert,
   read:     "#8FA0B3",
 }
-const EDGE_LABEL_COLOR: Record<EdgeKind, string> = {
-  sync:     "var(--accent)",
-  review:   "var(--ok)",
-  generate: "#9B8FA9",
-  alert:    "var(--alert)",
-  read:     "#8FA0B3",
-}
-
-// ─── Layout positions (col × row grid, unitless — we use %) ─────────────────
-// We'll render in a 5-layer column layout inside a scrollable container.
 
 const LAYER_LABELS: Record<NodeKind, string> = {
   data:   "Data sources",
-  agent:  "Processing layer",
+  agent:  "Processing",
   coach:  "Coach product",
   client: "Client product",
   output: "Outputs",
@@ -210,57 +201,63 @@ export default function ArchitecturePage() {
   }
 
   return (
-    <div style={{ padding: "32px 40px", minHeight: "100vh", fontFamily: "var(--mono)" }}>
+    <div style={{ padding: "40px 48px 80px", minHeight: "100vh" }}>
+
       {/* Header */}
-      <div style={{ marginBottom: 32 }}>
-        <div style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--ink-3)", marginBottom: 6 }}>
-          SYSTEM ARCHITECTURE
-        </div>
-        <h1 style={{ fontFamily: "var(--serif)", fontSize: 22, fontWeight: 600, margin: 0, color: "var(--ink-1)" }}>
+      <div style={{ marginBottom: 40 }}>
+        <p style={{ fontFamily: T.sans, fontSize: 11, fontWeight: 500, color: T.ink3, margin: "0 0 8px" }}>
+          System architecture
+        </p>
+        <h1 style={{ fontFamily: T.serif, fontSize: 26, fontWeight: 400, margin: "0 0 12px", color: T.ink }}>
           How the two products talk to each other
         </h1>
-        <p style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 8, maxWidth: 600, lineHeight: 1.6 }}>
+        <p style={{ fontFamily: T.sans, fontSize: 13, color: T.ink3, margin: 0, maxWidth: 600, lineHeight: 1.65 }}>
           Every action Darcy takes in the Coach product — editing strategy, publishing directives, approving agent drafts —
-          produces a visible result in Jamie's Client product. This document maps those connections.
-          Click any node or edge to see details.
+          produces a visible result in Jamie's Client product. Click any node or edge to see details.
         </p>
       </div>
 
       {/* Legend */}
-      <div style={{ display: "flex", gap: 20, flexWrap: "wrap", marginBottom: 28 }}>
+      <div style={{ display: "flex", gap: 20, flexWrap: "wrap", marginBottom: 32 }}>
         {LAYER_ORDER.map(kind => (
           <div key={kind} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ width: 10, height: 10, borderRadius: kind === "agent" ? "50%" : 2, background: KIND_COLOR[kind], flexShrink: 0 }} />
-            <span style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-3)" }}>
+            <div style={{
+              width: 8,
+              height: 8,
+              borderRadius: kind === "agent" ? "50%" : 2,
+              background: KIND_COLOR[kind],
+              flexShrink: 0,
+            }} />
+            <span style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3 }}>
               {LAYER_LABELS[kind]}
             </span>
           </div>
         ))}
-        <div style={{ width: 1, background: "var(--hair-strong)", margin: "0 4px" }} />
+        <div style={{ width: 1, background: T.borderMed, margin: "0 4px" }} />
         {(Object.keys(EDGE_COLOR) as EdgeKind[]).map(ek => (
           <div key={ek} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ width: 18, height: 2, background: EDGE_COLOR[ek], flexShrink: 0, borderRadius: 1 }} />
-            <span style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-3)" }}>{ek}</span>
+            <div style={{ width: 16, height: 2, background: EDGE_COLOR[ek], flexShrink: 0, borderRadius: 1 }} />
+            <span style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3 }}>{ek}</span>
           </div>
         ))}
       </div>
 
       {/* Main grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16, marginBottom: 32 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16, marginBottom: 48 }}>
         {LAYER_ORDER.map(kind => (
           <div key={kind}>
             <div style={{
-              fontSize: 9,
-              letterSpacing: "0.15em",
-              textTransform: "uppercase",
+              fontFamily: T.sans,
+              fontSize: 11,
+              fontWeight: 500,
               color: KIND_COLOR[kind],
               marginBottom: 10,
+              paddingBottom: 8,
               borderBottom: `1px solid ${KIND_COLOR[kind]}33`,
-              paddingBottom: 6,
             }}>
               {LAYER_LABELS[kind]}
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {byLayer(kind).map(node => {
                 const hi = isHighlighted(node.id)
                 const sel = activeNode?.id === node.id
@@ -271,35 +268,39 @@ export default function ArchitecturePage() {
                     style={{
                       all: "unset",
                       cursor: "pointer",
-                      border: `1px solid ${sel ? KIND_COLOR[kind] : "var(--hair-strong)"}`,
-                      borderRadius: 6,
+                      border: `1px solid ${sel ? KIND_COLOR[kind] : T.border}`,
+                      borderRadius: 8,
                       padding: "10px 12px",
-                      background: sel ? KIND_BG[kind] : "transparent",
-                      opacity: hi ? 1 : 0.28,
-                      transition: "opacity 0.15s, border-color 0.15s",
+                      background: sel ? KIND_BG[kind] : T.surface,
+                      opacity: hi ? 1 : 0.25,
+                      transition: "opacity 0.15s, border-color 0.15s, background 0.15s",
                       display: "block",
                       textAlign: "left",
                     }}
                   >
-                    <div style={{ fontSize: 11, color: sel ? KIND_COLOR[kind] : "var(--ink-1)", fontWeight: sel ? 600 : 400, marginBottom: 3 }}>
+                    <div style={{
+                      fontFamily: T.sans,
+                      fontSize: 12,
+                      fontWeight: sel ? 600 : 400,
+                      color: sel ? KIND_COLOR[kind] : T.ink,
+                      marginBottom: 2,
+                    }}>
                       {node.label}
                     </div>
                     {node.sublabel && (
-                      <div style={{ fontSize: 9, color: "var(--ink-3)", letterSpacing: "0.05em" }}>
+                      <div style={{ fontFamily: T.sans, fontSize: 10, color: T.ink3, marginBottom: 8 }}>
                         {node.sublabel}
                       </div>
                     )}
-                    {/* Edge count badge */}
-                    <div style={{ marginTop: 8, display: "flex", gap: 4, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                       {edgesFor(node.id).map((e, i) => (
                         <span key={i} style={{
-                          fontSize: 8,
+                          fontFamily: T.sans,
+                          fontSize: 9,
                           padding: "1px 5px",
-                          borderRadius: 3,
-                          background: `${EDGE_COLOR[e.kind]}22`,
+                          borderRadius: 4,
+                          background: `${EDGE_COLOR[e.kind]}20`,
                           color: EDGE_COLOR[e.kind],
-                          letterSpacing: "0.08em",
-                          textTransform: "uppercase",
                         }}>
                           {e.kind}
                         </span>
@@ -314,10 +315,10 @@ export default function ArchitecturePage() {
       </div>
 
       {/* Edge table */}
-      <div style={{ marginBottom: 32 }}>
-        <div style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--ink-3)", marginBottom: 12 }}>
-          ALL CONNECTIONS — click to inspect
-        </div>
+      <div style={{ marginBottom: 48 }}>
+        <p style={{ fontFamily: T.sans, fontSize: 11, fontWeight: 500, color: T.ink3, margin: "0 0 12px" }}>
+          All connections — click to inspect
+        </p>
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {EDGES.map((edge, i) => {
             const fromNode = NODES.find(n => n.id === edge.from)!
@@ -337,65 +338,58 @@ export default function ArchitecturePage() {
                   all: "unset",
                   cursor: "pointer",
                   display: "grid",
-                  gridTemplateColumns: "180px 60px 180px 80px 1fr",
+                  gridTemplateColumns: "180px 40px 180px 90px 1fr",
                   alignItems: "center",
                   gap: 12,
-                  padding: "8px 12px",
-                  border: `1px solid ${sel ? EDGE_COLOR[edge.kind] : "var(--hair)"}`,
-                  borderRadius: 5,
-                  background: sel ? `${EDGE_COLOR[edge.kind]}10` : "transparent",
+                  padding: "10px 14px",
+                  border: `1px solid ${sel ? EDGE_COLOR[edge.kind] : T.border}`,
+                  borderRadius: 8,
+                  background: sel ? `${EDGE_COLOR[edge.kind]}10` : T.surface,
                   opacity: hi ? 1 : 0.2,
                   transition: "opacity 0.15s, border-color 0.15s",
-                  fontSize: 11,
                 }}
               >
-                {/* From */}
                 <div style={{ color: KIND_COLOR[fromNode.kind] }}>
-                  <span style={{ fontSize: 9, color: "var(--ink-3)", display: "block", marginBottom: 1 }}>FROM</span>
-                  {fromNode.label}
+                  <span style={{ fontFamily: T.sans, fontSize: 10, color: T.ink3, display: "block", marginBottom: 2 }}>From</span>
+                  <span style={{ fontFamily: T.sans, fontSize: 12 }}>{fromNode.label}</span>
                 </div>
-                {/* Arrow */}
-                <div style={{ textAlign: "center", color: EDGE_COLOR[edge.kind], fontSize: 13 }}>→</div>
-                {/* To */}
+                <div style={{ textAlign: "center", color: EDGE_COLOR[edge.kind], fontFamily: T.sans, fontSize: 16, lineHeight: 1 }}>→</div>
                 <div style={{ color: KIND_COLOR[toNode.kind] }}>
-                  <span style={{ fontSize: 9, color: "var(--ink-3)", display: "block", marginBottom: 1 }}>TO</span>
-                  {toNode.label}
+                  <span style={{ fontFamily: T.sans, fontSize: 10, color: T.ink3, display: "block", marginBottom: 2 }}>To</span>
+                  <span style={{ fontFamily: T.sans, fontSize: 12 }}>{toNode.label}</span>
                 </div>
-                {/* Kind */}
-                <div style={{
-                  fontSize: 9,
-                  padding: "2px 7px",
-                  borderRadius: 3,
-                  background: `${EDGE_COLOR[edge.kind]}20`,
-                  color: EDGE_LABEL_COLOR[edge.kind],
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  textAlign: "center",
+                <span style={{
+                  fontFamily: T.sans,
+                  fontSize: 10,
+                  padding: "3px 8px",
+                  borderRadius: 6,
+                  background: `${EDGE_COLOR[edge.kind]}18`,
+                  color: EDGE_COLOR[edge.kind],
                   justifySelf: "start",
                 }}>
                   {edge.kind}
-                </div>
-                {/* Label */}
-                <div style={{ color: "var(--ink-2)", fontSize: 11 }}>{edge.label}</div>
+                </span>
+                <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink2 }}>{edge.label}</span>
               </button>
             )
           })}
         </div>
       </div>
 
-      {/* Detail panel */}
+      {/* Detail panel (sticky) */}
       {(activeNode || activeEdge) && (
         <div style={{
           position: "sticky",
           bottom: 20,
-          border: "1px solid var(--hair-strong)",
-          borderRadius: 8,
-          padding: "16px 20px",
-          background: "var(--bg)",
+          border: `1px solid ${T.borderMed}`,
+          borderRadius: 12,
+          padding: "20px 24px",
+          background: T.surface,
           display: "grid",
           gridTemplateColumns: "1fr auto",
           gap: 16,
           alignItems: "start",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
         }}>
           {activeNode && (() => {
             const inbound  = EDGES.filter(e => e.to   === activeNode.id)
@@ -403,26 +397,30 @@ export default function ArchitecturePage() {
             return (
               <>
                 <div>
-                  <div style={{ fontSize: 9, letterSpacing: "0.15em", textTransform: "uppercase", color: KIND_COLOR[activeNode.kind], marginBottom: 4 }}>
+                  <div style={{ fontFamily: T.sans, fontSize: 11, fontWeight: 500, color: KIND_COLOR[activeNode.kind], marginBottom: 4 }}>
                     {LAYER_LABELS[activeNode.kind]}
                   </div>
-                  <div style={{ fontSize: 14, color: "var(--ink-1)", fontWeight: 600, marginBottom: 4 }}>{activeNode.label}</div>
+                  <div style={{ fontFamily: T.serif, fontSize: 18, color: T.ink, fontWeight: 400, marginBottom: 4 }}>
+                    {activeNode.label}
+                  </div>
                   {activeNode.sublabel && (
-                    <div style={{ fontSize: 11, color: "var(--ink-3)", marginBottom: 12 }}>{activeNode.sublabel}</div>
+                    <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3, marginBottom: 16 }}>
+                      {activeNode.sublabel}
+                    </div>
                   )}
-                  <div style={{ display: "flex", gap: 24 }}>
+                  <div style={{ display: "flex", gap: 32 }}>
                     {inbound.length > 0 && (
                       <div>
-                        <div style={{ fontSize: 9, color: "var(--ink-3)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6 }}>
-                          RECEIVES FROM
+                        <div style={{ fontFamily: T.sans, fontSize: 10, fontWeight: 500, color: T.ink3, marginBottom: 8 }}>
+                          Receives from
                         </div>
                         {inbound.map((e, i) => {
                           const src = NODES.find(n => n.id === e.from)!
                           return (
-                            <div key={i} style={{ fontSize: 11, color: "var(--ink-2)", marginBottom: 4, display: "flex", gap: 6, alignItems: "baseline" }}>
-                              <span style={{ color: EDGE_COLOR[e.kind], fontSize: 9 }}>●</span>
+                            <div key={i} style={{ fontFamily: T.sans, fontSize: 12, color: T.ink2, marginBottom: 4, display: "flex", gap: 8, alignItems: "baseline" }}>
+                              <span style={{ color: EDGE_COLOR[e.kind], fontSize: 8 }}>●</span>
                               <span style={{ color: KIND_COLOR[src.kind] }}>{src.label}</span>
-                              <span style={{ color: "var(--ink-3)" }}>via {e.label}</span>
+                              <span style={{ color: T.ink3 }}>via {e.label}</span>
                             </div>
                           )
                         })}
@@ -430,16 +428,16 @@ export default function ArchitecturePage() {
                     )}
                     {outbound.length > 0 && (
                       <div>
-                        <div style={{ fontSize: 9, color: "var(--ink-3)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6 }}>
-                          SENDS TO
+                        <div style={{ fontFamily: T.sans, fontSize: 10, fontWeight: 500, color: T.ink3, marginBottom: 8 }}>
+                          Sends to
                         </div>
                         {outbound.map((e, i) => {
                           const dst = NODES.find(n => n.id === e.to)!
                           return (
-                            <div key={i} style={{ fontSize: 11, color: "var(--ink-2)", marginBottom: 4, display: "flex", gap: 6, alignItems: "baseline" }}>
-                              <span style={{ color: EDGE_COLOR[e.kind], fontSize: 9 }}>●</span>
+                            <div key={i} style={{ fontFamily: T.sans, fontSize: 12, color: T.ink2, marginBottom: 4, display: "flex", gap: 8, alignItems: "baseline" }}>
+                              <span style={{ color: EDGE_COLOR[e.kind], fontSize: 8 }}>●</span>
                               <span style={{ color: KIND_COLOR[dst.kind] }}>{dst.label}</span>
-                              <span style={{ color: "var(--ink-3)" }}>via {e.label}</span>
+                              <span style={{ color: T.ink3 }}>via {e.label}</span>
                             </div>
                           )
                         })}
@@ -447,8 +445,11 @@ export default function ArchitecturePage() {
                     )}
                   </div>
                 </div>
-                <button onClick={() => setActiveNode(null)} style={{ all: "unset", cursor: "pointer", fontSize: 10, color: "var(--ink-3)", letterSpacing: "0.1em" }}>
-                  CLOSE ×
+                <button
+                  onClick={() => setActiveNode(null)}
+                  style={{ all: "unset", cursor: "pointer", fontFamily: T.sans, fontSize: 12, color: T.ink3, padding: "4px 8px" }}
+                >
+                  ×
                 </button>
               </>
             )
@@ -460,20 +461,23 @@ export default function ArchitecturePage() {
             return (
               <>
                 <div>
-                  <div style={{ fontSize: 9, letterSpacing: "0.15em", textTransform: "uppercase", color: EDGE_COLOR[activeEdge.kind], marginBottom: 6 }}>
-                    {activeEdge.kind.toUpperCase()} · {activeEdge.label}
+                  <div style={{ fontFamily: T.sans, fontSize: 11, fontWeight: 500, color: EDGE_COLOR[activeEdge.kind], marginBottom: 8 }}>
+                    {activeEdge.kind} · {activeEdge.label}
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                    <span style={{ fontSize: 13, color: KIND_COLOR[fromNode.kind], fontWeight: 600 }}>{fromNode.label}</span>
-                    <span style={{ color: EDGE_COLOR[activeEdge.kind] }}>──────→</span>
-                    <span style={{ fontSize: 13, color: KIND_COLOR[toNode.kind], fontWeight: 600 }}>{toNode.label}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                    <span style={{ fontFamily: T.serif, fontSize: 16, color: KIND_COLOR[fromNode.kind] }}>{fromNode.label}</span>
+                    <span style={{ fontFamily: T.sans, color: EDGE_COLOR[activeEdge.kind], fontSize: 18 }}>──→</span>
+                    <span style={{ fontFamily: T.serif, fontSize: 16, color: KIND_COLOR[toNode.kind] }}>{toNode.label}</span>
                   </div>
-                  <p style={{ fontSize: 12, color: "var(--ink-2)", margin: 0, lineHeight: 1.65, maxWidth: 560 }}>
+                  <p style={{ fontFamily: T.sans, fontSize: 13, color: T.ink2, margin: 0, lineHeight: 1.65, maxWidth: 560 }}>
                     {activeEdge.description}
                   </p>
                 </div>
-                <button onClick={() => setActiveEdge(null)} style={{ all: "unset", cursor: "pointer", fontSize: 10, color: "var(--ink-3)", letterSpacing: "0.1em" }}>
-                  CLOSE ×
+                <button
+                  onClick={() => setActiveEdge(null)}
+                  style={{ all: "unset", cursor: "pointer", fontFamily: T.sans, fontSize: 12, color: T.ink3, padding: "4px 8px" }}
+                >
+                  ×
                 </button>
               </>
             )
@@ -481,19 +485,36 @@ export default function ArchitecturePage() {
         </div>
       )}
 
-      {/* Action-to-result reference table */}
-      <div style={{ marginTop: 40, paddingTop: 24, borderTop: "1px solid var(--hair-strong)" }}>
-        <div style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--ink-3)", marginBottom: 16 }}>
-          ACTION → VISUAL RESULT REFERENCE
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 1, background: "var(--hair)", border: "1px solid var(--hair)" }}>
-          {/* Header */}
+      {/* Action → result reference table */}
+      <div style={{ marginTop: 56, paddingTop: 32, borderTop: `1px solid ${T.border}` }}>
+        <p style={{ fontFamily: T.sans, fontSize: 11, fontWeight: 500, color: T.ink3, margin: "0 0 20px" }}>
+          Action → visual result reference
+        </p>
+
+        {/* Header row */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr 1fr",
+          gap: 1,
+          marginBottom: 1,
+        }}>
           {["Darcy does this in Coach", "Triggers this process", "Jamie sees this in Client"].map(h => (
-            <div key={h} style={{ padding: "8px 12px", background: "var(--bg-2)", fontSize: 9, color: "var(--ink-3)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+            <div key={h} style={{
+              fontFamily: T.sans,
+              fontSize: 11,
+              fontWeight: 500,
+              color: T.ink3,
+              padding: "10px 14px",
+              background: T.surfaceRaised,
+              borderRadius: 0,
+            }}>
               {h}
             </div>
           ))}
-          {/* Rows */}
+        </div>
+
+        {/* Data rows */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
           {[
             ["Publishes a protocol change in Strategy doc", "Directive generated → pushed to dashboard", "New corrector card appears in 'In-flight correctors'"],
             ["Confirms DEXA fasting in Command Centre", "Milestone marked done on Medical Roadmap", "Upcoming test shows confirmed status"],
@@ -502,55 +523,67 @@ export default function ArchitecturePage() {
             ["Closes a quarter (Q1 → Q2 transition)", "Report snapshot generated, archived", "Historical report link appears in 'Past quarters'"],
             ["Agent flags autonomic stress overnight", "Alert sent to Darcy + briefing prepared", "No direct client impact until Darcy acts on it"],
             ["Jamie submits daily check-in (RPE)", "RPE feeds IRT engine → AL score updates", "Darcy's Trends pivot refreshes with new day data"],
-          ].map(([action, trigger, result], i) => (
-            [action, trigger, result].map((cell, j) => (
-              <div key={`${i}-${j}`} style={{
-                padding: "10px 12px",
-                background: "var(--bg)",
-                fontSize: 11,
-                color: j === 0 ? "var(--ok)" : j === 1 ? "#9B8FA9" : "var(--accent)",
-                lineHeight: 1.5,
+          ].map(([action, trigger, result], i) => {
+            const colors = [T.ok, "#9B8FA9", T.accent]
+            return (
+              <div key={i} style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr 1fr",
+                gap: 1,
               }}>
-                {cell}
+                {[action, trigger, result].map((cell, j) => (
+                  <div key={j} style={{
+                    padding: "12px 14px",
+                    background: T.surface,
+                    fontFamily: T.sans,
+                    fontSize: 12,
+                    color: colors[j],
+                    lineHeight: 1.55,
+                    borderRadius: 0,
+                  }}>
+                    {cell}
+                  </div>
+                ))}
               </div>
-            ))
-          ))}
+            )
+          })}
         </div>
       </div>
 
       {/* Integration status */}
-      <div style={{ marginTop: 32, display: "flex", gap: 16, flexWrap: "wrap" }}>
+      <div style={{ marginTop: 40, display: "flex", gap: 12, flexWrap: "wrap" }}>
         {[
-          { label: "Data sync", status: "live",    note: "Wearable + CGM auto-sync" },
-          { label: "IRT engine", status: "live",   note: "Scoring on every new data point" },
-          { label: "AI Agent",   status: "proto",  note: "Pre-loaded responses, API pending" },
-          { label: "Directives", status: "live",   note: "Coach publishes → client sees" },
-          { label: "Reports",    status: "proto",  note: "Q2 active, Q1 archived" },
-          { label: "Push alerts",status: "planned",note: "Agent → Darcy notifications" },
-        ].map(item => (
-          <div key={item.label} style={{
-            border: "1px solid var(--hair-strong)",
-            borderRadius: 6,
-            padding: "10px 14px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 4,
-            minWidth: 140,
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <div style={{
-                width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
-                background: item.status === "live" ? "var(--ok)" : item.status === "proto" ? "var(--warn)" : "var(--ink-4)",
-              }} />
-              <span style={{ fontSize: 10, color: "var(--ink-3)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                {item.status}
-              </span>
+          { label: "Data sync",   status: "live",    note: "Wearable + CGM auto-sync" },
+          { label: "IRT engine",  status: "live",    note: "Scoring on every new data point" },
+          { label: "AI Agent",    status: "proto",   note: "Pre-loaded responses, API pending" },
+          { label: "Directives",  status: "live",    note: "Coach publishes → client sees" },
+          { label: "Reports",     status: "proto",   note: "Q2 active, Q1 archived" },
+          { label: "Push alerts", status: "planned", note: "Agent → Darcy notifications" },
+        ].map(item => {
+          const statusColor = item.status === "live" ? T.ok : item.status === "proto" ? T.warn : T.ink4
+          return (
+            <div key={item.label} style={{
+              background: T.surface,
+              borderRadius: 10,
+              padding: "12px 16px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 4,
+              minWidth: 140,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, background: statusColor }} />
+                <span style={{ fontFamily: T.sans, fontSize: 10, color: T.ink3 }}>
+                  {item.status}
+                </span>
+              </div>
+              <div style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 500, color: T.ink }}>{item.label}</div>
+              <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3 }}>{item.note}</div>
             </div>
-            <div style={{ fontSize: 12, color: "var(--ink-1)", fontWeight: 500 }}>{item.label}</div>
-            <div style={{ fontSize: 10, color: "var(--ink-3)" }}>{item.note}</div>
-          </div>
-        ))}
+          )
+        })}
       </div>
+
     </div>
   )
 }

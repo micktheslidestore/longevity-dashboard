@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { DATA } from "@/data/james"
 import { useApp } from "@/components/RoleContext"
-import { LifecycleChip } from "@/components/Primitives"
+import { LifecycleChip, T } from "@/components/Primitives"
 import ActivityFeed from "@/components/ActivityFeed"
 import QuarterlyReview from "@/components/QuarterlyReview"
 
@@ -12,15 +12,15 @@ function Avatar({ initials, round }: { initials: string; round?: boolean }) {
     <div style={{
       width: 36,
       height: 36,
-      borderRadius: round ? "50%" : 0,
-      background: "var(--panel-2)",
-      border: "1px solid var(--hair-strong)",
+      borderRadius: round ? "50%" : 8,
+      background: T.surfaceRaised,
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      fontFamily: "var(--mono)",
+      fontFamily: T.sans,
       fontSize: 11,
-      color: "var(--ink-2)",
+      fontWeight: 600,
+      color: T.ink3,
       flexShrink: 0,
     }}>
       {initials}
@@ -30,40 +30,58 @@ function Avatar({ initials, round }: { initials: string; round?: boolean }) {
 
 export default function TeamPage() {
   const { role } = useApp()
-  const { team, user } = DATA
+  const { team } = DATA
   const [inboxTab, setInboxTab] = useState<"pending" | "signed">("pending")
 
   const pendingInbox = role === "darcy" ? team.inbox : []
   const visibleSigned = team.signed.filter(s => s.visibleTo === "james" || role === "darcy")
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: "24px 32px", maxWidth: 1100 }}>
+    <div style={{
+      display: "flex",
+      flexDirection: "column",
+      gap: 48,
+      padding: "48px 48px 80px",
+      maxWidth: 960,
+      margin: "0 auto",
+    }}>
 
-      {/* Quarterly review — auto-surfaces at quarter close */}
+      {/* Quarterly review */}
       <QuarterlyReview />
 
       {/* Workflow explainer */}
-      <div className="panel" style={{ padding: "18px 22px" }}>
-        <div style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--ink-3)", marginBottom: 14 }}>
+      <div style={{
+        background: T.surface,
+        borderRadius: 12,
+        padding: "28px 32px",
+      }}>
+        <p style={{
+          fontFamily: T.sans,
+          fontSize: 11,
+          fontWeight: 500,
+          color: T.ink3,
+          marginBottom: 20,
+          margin: "0 0 20px",
+        }}>
           How this works
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+        </p>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 0 }}>
           {[
-            { label: "Agent", sub: "Monitors signals 24/7. Drafts insights, flags anomalies, proposes protocol changes.", color: "var(--ink-3)" },
+            { label: "Agent", sub: "Monitors signals 24/7. Drafts insights, flags anomalies, proposes protocol changes.", color: T.ink3 },
             { arrow: "→", arrowSub: "draft" },
-            { label: "Darcy", sub: "Reviews every agent output. Countersigns, modifies, or discards before it reaches you.", color: "var(--ok)" },
+            { label: "Darcy", sub: "Reviews every agent output. Countersigns, modifies, or discards before it reaches you.", color: T.ok },
             { arrow: "→", arrowSub: "signed" },
-            { label: "Jamie", sub: "Receives only what Darcy has reviewed and signed. Agent drafts are never visible to you.", color: "var(--accent)" },
+            { label: "Jamie", sub: "Receives only what Darcy has reviewed and signed. Agent drafts are never visible to you.", color: T.accent },
           ].map((step, i) => (
             "arrow" in step ? (
-              <div key={i} style={{ textAlign: "center", padding: "0 16px", flexShrink: 0 }}>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 16, color: "var(--hair-strong)" }}>{step.arrow}</div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 8, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 2 }}>{step.arrowSub}</div>
+              <div key={i} style={{ textAlign: "center", padding: "0 20px", flexShrink: 0 }}>
+                <div style={{ fontFamily: T.sans, fontSize: 18, color: T.border, lineHeight: 1 }}>{step.arrow}</div>
+                <div style={{ fontFamily: T.sans, fontSize: 10, color: T.ink3, marginTop: 3 }}>{step.arrowSub}</div>
               </div>
             ) : (
-              <div key={i} style={{ flex: 1, borderLeft: i === 0 ? "none" : undefined }}>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: step.color, marginBottom: 4 }}>{step.label}</div>
-                <div style={{ fontSize: 12, color: "var(--ink-2)", lineHeight: 1.5 }}>{step.sub}</div>
+              <div key={i} style={{ flex: 1 }}>
+                <div style={{ fontFamily: T.sans, fontSize: 12, fontWeight: 600, color: step.color, marginBottom: 6 }}>{step.label}</div>
+                <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink2, lineHeight: 1.6 }}>{step.sub}</div>
               </div>
             )
           ))}
@@ -71,102 +89,241 @@ export default function TeamPage() {
       </div>
 
       {/* Two column: coach card + calendar */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
 
         {/* Coach card */}
-        <div className="panel" style={{ padding: "20px 22px" }}>
-          <div style={{ display: "flex", gap: 14, alignItems: "flex-start", marginBottom: 16 }}>
+        <div style={{ background: T.surface, borderRadius: 12, padding: "24px 28px" }}>
+          <div style={{ display: "flex", gap: 14, alignItems: "flex-start", marginBottom: 18 }}>
             <Avatar initials={team.coach.initials} round />
             <div>
-              <div style={{ fontFamily: "var(--mono)", fontSize: 12, color: "var(--ink)" }}>{team.coach.name}</div>
-              <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 3 }}>{team.coach.role}</div>
+              <div style={{ fontFamily: T.serif, fontSize: 16, fontWeight: 400, color: T.ink, lineHeight: 1.2 }}>
+                {team.coach.name}
+              </div>
+              <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3, marginTop: 3 }}>
+                {team.coach.role}
+              </div>
             </div>
           </div>
-          <p style={{ fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.6 }}>{team.coach.bio}</p>
+          <p style={{ fontFamily: T.sans, fontSize: 13, color: T.ink2, lineHeight: 1.65, margin: 0 }}>
+            {team.coach.bio}
+          </p>
         </div>
 
         {/* Upcoming */}
-        <div className="panel">
-          <div className="panel-head">
-            <span>Upcoming</span>
+        <div style={{ background: T.surface, borderRadius: 12, overflow: "hidden" }}>
+          <div style={{
+            padding: "18px 24px 14px",
+            borderBottom: `1px solid ${T.border}`,
+          }}>
+            <span style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 500, color: T.ink }}>Upcoming</span>
           </div>
           {team.calendar.map((ev, i) => (
-            <div key={i} style={{ display: "grid", gridTemplateColumns: "44px 1fr auto", gap: 14, padding: "10px 16px", borderTop: i > 0 ? "1px solid var(--hair)" : undefined, alignItems: "center" }}>
+            <div key={i} style={{
+              display: "grid",
+              gridTemplateColumns: "44px 1fr auto",
+              gap: 14,
+              padding: "12px 24px",
+              borderTop: i > 0 ? `1px solid ${T.border}` : undefined,
+              alignItems: "center",
+            }}>
               <div style={{ textAlign: "center" }}>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 16, letterSpacing: "-0.02em", color: "var(--ink)", lineHeight: 1 }}>{ev.day}</div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{ev.dow}</div>
+                <div style={{ fontFamily: T.mono, fontSize: 17, letterSpacing: "-0.02em", color: T.ink, lineHeight: 1 }}>
+                  {ev.day}
+                </div>
+                <div style={{ fontFamily: T.sans, fontSize: 10, color: T.ink3, marginTop: 2 }}>{ev.dow}</div>
               </div>
               <div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--ink)", marginBottom: 2 }}>{ev.title}</div>
-                <div style={{ fontSize: 11, color: "var(--ink-3)" }}>{ev.with} · {ev.when}</div>
+                <div style={{ fontFamily: T.sans, fontSize: 12, fontWeight: 500, color: T.ink, marginBottom: 2 }}>{ev.title}</div>
+                <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3 }}>{ev.with} · {ev.when}</div>
               </div>
-              <div style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-3)", border: "1px solid var(--hair)", padding: "2px 6px" }}>{ev.tag}</div>
+              <div style={{
+                fontFamily: T.sans,
+                fontSize: 10,
+                color: T.ink3,
+                background: T.surfaceRaised,
+                padding: "2px 8px",
+                borderRadius: 6,
+              }}>
+                {ev.tag}
+              </div>
             </div>
           ))}
         </div>
       </div>
 
       {/* Agent standing brief */}
-      <div className="panel" style={{ padding: "16px 20px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-          <span style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--ink-3)" }}>
+      <div style={{ background: T.surface, borderRadius: 12, padding: "20px 28px" }}>
+        <div style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+          marginBottom: 12,
+        }}>
+          <span style={{ fontFamily: T.sans, fontSize: 11, fontWeight: 500, color: T.ink3 }}>
             Agent standing brief
           </span>
-          <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          <span style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3 }}>
             Issued by {team.agentBriefIssuedBy}
           </span>
         </div>
-        <p style={{ fontSize: 13, color: "var(--ink-2)", lineHeight: 1.6, fontStyle: "italic", fontFamily: "var(--serif)" }}>
+        <p style={{
+          fontFamily: T.serif,
+          fontSize: 15,
+          color: T.ink2,
+          lineHeight: 1.7,
+          fontStyle: "italic",
+          margin: 0,
+        }}>
           {team.agentStandingBrief}
         </p>
       </div>
 
       {/* Inbox */}
-      <div className="panel">
-        <div className="panel-head">
-          <span>Inbox</span>
+      <div style={{ background: T.surface, borderRadius: 12, overflow: "hidden" }}>
+        <div style={{
+          padding: "18px 24px 14px",
+          borderBottom: `1px solid ${T.border}`,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}>
+          <span style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 500, color: T.ink }}>Inbox</span>
           {role === "darcy" && (
-            <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--warn)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            <span style={{ fontFamily: T.sans, fontSize: 11, color: T.warn }}>
               {pendingInbox.length} awaiting review
             </span>
           )}
         </div>
-        <div className="inbox-tabs" style={{ padding: "0 20px" }}>
-          <button data-on={inboxTab === "pending"} onClick={() => setInboxTab("pending")}>
-            Pending
-            {role === "darcy" && <span className="count">{pendingInbox.length}</span>}
-          </button>
-          <button data-on={inboxTab === "signed"} onClick={() => setInboxTab("signed")}>
-            Signed <span className="count">{visibleSigned.length}</span>
-          </button>
+
+        {/* Tabs */}
+        <div style={{ display: "flex", gap: 0, padding: "0 24px", borderBottom: `1px solid ${T.border}` }}>
+          {[
+            { key: "pending", label: "Pending", count: role === "darcy" ? pendingInbox.length : 0 },
+            { key: "signed",  label: "Signed",  count: visibleSigned.length },
+          ].map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setInboxTab(tab.key as "pending" | "signed")}
+              style={{
+                all: "unset",
+                cursor: "pointer",
+                fontFamily: T.sans,
+                fontSize: 12,
+                fontWeight: inboxTab === tab.key ? 500 : 400,
+                color: inboxTab === tab.key ? T.ink : T.ink3,
+                padding: "12px 0",
+                marginRight: 24,
+                borderBottom: inboxTab === tab.key ? `2px solid ${T.accent}` : "2px solid transparent",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                transition: "color 0.15s",
+              }}
+            >
+              {tab.label}
+              {tab.count > 0 && (
+                <span style={{
+                  fontFamily: T.mono,
+                  fontSize: 10,
+                  color: inboxTab === tab.key ? T.accent : T.ink3,
+                  background: inboxTab === tab.key ? `rgba(200,165,106,0.12)` : T.surfaceRaised,
+                  padding: "1px 6px",
+                  borderRadius: 10,
+                }}>
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
 
         {inboxTab === "pending" && (
           role === "darcy" ? (
             pendingInbox.map(item => (
-              <div key={item.id} className="inbox-row">
-                <div className="ig">
-                  <Avatar initials="AG" />
-                </div>
+              <div key={item.id} style={{
+                display: "grid",
+                gridTemplateColumns: "auto 1fr auto",
+                gap: 16,
+                padding: "20px 24px",
+                borderTop: `1px solid ${T.border}`,
+                alignItems: "flex-start",
+              }}>
+                <Avatar initials="AG" />
                 <div>
-                  <div className="it">{item.title}</div>
-                  <div className="ib">{item.body}</div>
-                  <div className="ir">
-                    {item.refs.map(r => <span key={r}>{r}</span>)}
+                  <div style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 500, color: T.ink, marginBottom: 4 }}>
+                    {item.title}
                   </div>
-                  <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", marginTop: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  <div style={{ fontFamily: T.serif, fontSize: 13, color: T.ink2, lineHeight: 1.6, fontStyle: "italic", marginBottom: 8 }}>
+                    {item.body}
+                  </div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+                    {item.refs.map(r => (
+                      <span key={r} style={{
+                        fontFamily: T.sans,
+                        fontSize: 10,
+                        color: T.ink3,
+                        background: T.surfaceRaised,
+                        padding: "2px 8px",
+                        borderRadius: 6,
+                      }}>{r}</span>
+                    ))}
+                  </div>
+                  <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3 }}>
                     Drafted {item.drafted} · {item.visibility === "hidden-from-james" ? "Not visible to Jamie" : "Visible"}
                   </div>
                 </div>
-                <div className="inbox-actions">
-                  <button className="primary">Countersign</button>
-                  <button>Edit &amp; sign</button>
-                  <button className="danger">Discard</button>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <button style={{
+                    all: "unset",
+                    cursor: "pointer",
+                    fontFamily: T.sans,
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: T.bg,
+                    background: T.ok,
+                    padding: "7px 14px",
+                    borderRadius: 8,
+                    textAlign: "center",
+                  }}>
+                    Countersign
+                  </button>
+                  <button style={{
+                    all: "unset",
+                    cursor: "pointer",
+                    fontFamily: T.sans,
+                    fontSize: 12,
+                    color: T.ink2,
+                    background: T.surfaceRaised,
+                    padding: "7px 14px",
+                    borderRadius: 8,
+                    textAlign: "center",
+                  }}>
+                    Edit &amp; sign
+                  </button>
+                  <button style={{
+                    all: "unset",
+                    cursor: "pointer",
+                    fontFamily: T.sans,
+                    fontSize: 12,
+                    color: "#C17A6A",
+                    background: "rgba(193,122,106,0.08)",
+                    padding: "7px 14px",
+                    borderRadius: 8,
+                    textAlign: "center",
+                  }}>
+                    Discard
+                  </button>
                 </div>
               </div>
             ))
           ) : (
-            <div style={{ padding: "32px 20px", textAlign: "center", fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+            <div style={{
+              padding: "48px 24px",
+              textAlign: "center",
+              fontFamily: T.sans,
+              fontSize: 12,
+              color: T.ink3,
+            }}>
               Agent drafts pass through Darcy before reaching you.
             </div>
           )
@@ -175,16 +332,22 @@ export default function TeamPage() {
         {inboxTab === "signed" && (
           visibleSigned.length > 0 ? (
             visibleSigned.map(item => (
-              <div key={item.id} style={{ padding: "16px 20px", borderTop: "1px solid var(--hair)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-                  <span style={{ fontFamily: "var(--serif)", fontSize: 15, color: "var(--ink)" }}>{item.title}</span>
-                  <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ok)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Signed {item.signedAt}</span>
+              <div key={item.id} style={{ padding: "20px 24px", borderTop: `1px solid ${T.border}` }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+                  <span style={{ fontFamily: T.serif, fontSize: 15, color: T.ink }}>{item.title}</span>
+                  <span style={{ fontFamily: T.sans, fontSize: 11, color: T.ok }}>Signed {item.signedAt}</span>
                 </div>
-                <div style={{ fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.55 }}>{item.body}</div>
+                <div style={{ fontFamily: T.sans, fontSize: 13, color: T.ink2, lineHeight: 1.6 }}>{item.body}</div>
               </div>
             ))
           ) : (
-            <div style={{ padding: "32px 20px", textAlign: "center", fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+            <div style={{
+              padding: "48px 24px",
+              textAlign: "center",
+              fontFamily: T.sans,
+              fontSize: 12,
+              color: T.ink3,
+            }}>
               Nothing signed yet.
             </div>
           )
@@ -192,32 +355,76 @@ export default function TeamPage() {
       </div>
 
       {/* Thread */}
-      <div className="panel">
-        <div className="panel-head">
-          <span>Thread</span>
+      <div style={{ background: T.surface, borderRadius: 12, overflow: "hidden" }}>
+        <div style={{
+          padding: "18px 24px 14px",
+          borderBottom: `1px solid ${T.border}`,
+        }}>
+          <span style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 500, color: T.ink }}>Thread</span>
         </div>
-        <div className="thread" style={{ padding: "0 20px" }}>
+        <div style={{ padding: "0 24px" }}>
           {team.thread.map((msg, i) => (
-            <div key={i} className="thread-item">
+            <div key={i} style={{
+              display: "grid",
+              gridTemplateColumns: "auto 1fr",
+              gap: 14,
+              padding: "18px 0",
+              borderTop: i > 0 ? `1px solid ${T.border}` : undefined,
+              alignItems: "flex-start",
+            }}>
+              <Avatar initials={msg.who === "agent" ? "AG" : team.coach.initials} round={msg.who === "coach"} />
               <div>
-                <Avatar initials={msg.who === "agent" ? "AG" : team.coach.initials} round={msg.who === "coach"} />
-              </div>
-              <div>
-                <div className="who-line">
-                  <span><strong>{msg.name}</strong></span>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <LifecycleChip lc={msg.chip} />
-                    <span>{msg.when}</span>
+                <div style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 8,
+                  gap: 12,
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontFamily: T.sans, fontSize: 12, fontWeight: 600, color: T.ink }}>
+                      {msg.name}
+                    </span>
+                    <LifecycleChip status={msg.chip} size="sm" />
                   </div>
+                  <span style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3, flexShrink: 0 }}>{msg.when}</span>
                 </div>
-                <div className={`body${msg.who === "agent" ? " agent" : ""}`}>{msg.body}</div>
+                <div style={{
+                  fontFamily: msg.who === "agent" ? T.serif : T.sans,
+                  fontStyle: msg.who === "agent" ? "italic" : "normal",
+                  fontSize: 13,
+                  color: T.ink2,
+                  lineHeight: 1.65,
+                }}>
+                  {msg.body}
+                </div>
                 {msg.refs.length > 0 && (
-                  <div className="refs">
-                    {msg.refs.map(r => <span key={r}>{r}</span>)}
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+                    {msg.refs.map(r => (
+                      <span key={r} style={{
+                        fontFamily: T.sans,
+                        fontSize: 10,
+                        color: T.ink3,
+                        background: T.surfaceRaised,
+                        padding: "2px 8px",
+                        borderRadius: 6,
+                      }}>{r}</span>
+                    ))}
                   </div>
                 )}
                 {msg.counter && (
-                  <div className="counter">{msg.counter}</div>
+                  <div style={{
+                    marginTop: 8,
+                    fontFamily: T.sans,
+                    fontSize: 12,
+                    color: T.ok,
+                    padding: "6px 12px",
+                    background: T.okSubtle,
+                    borderRadius: 8,
+                    display: "inline-block",
+                  }}>
+                    {msg.counter}
+                  </div>
                 )}
               </div>
             </div>
