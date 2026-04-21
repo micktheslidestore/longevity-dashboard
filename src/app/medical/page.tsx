@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { DATA } from "@/data/james"
+import { T } from "@/components/Primitives"
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, ReferenceLine, Tooltip } from "recharts"
 
 // ─── Biomarker pace + action view ────────────────────────────────────────────
@@ -54,61 +55,99 @@ const BIOMARKER_PACE: {
   },
 ]
 
-const PACE_STYLE: Record<PaceStatus, { label: string; color: string }> = {
-  "on-pace":  { label: "On pace",  color: "var(--ok)" },
-  "watch":    { label: "Watch",    color: "#9B8FA9" },
-  "off-pace": { label: "Off pace", color: "var(--warn)" },
-  "flag":     { label: "Flag",     color: "var(--alert)" },
+const PACE_STYLE: Record<PaceStatus, { label: string; color: string; bg: string }> = {
+  "on-pace":  { label: "On pace",  color: T.ok,    bg: T.okSubtle },
+  "watch":    { label: "Watch",    color: "#9B8FA9", bg: "rgba(155,143,169,0.08)" },
+  "off-pace": { label: "Off pace", color: T.warn,  bg: T.warnSubtle },
+  "flag":     { label: "Flag",     color: T.alert, bg: "rgba(193,122,106,0.08)" },
 }
 
 function BiomarkerPace() {
   const [selected, setSelected] = useState<string | null>(null)
 
   return (
-    <div className="panel">
-      <div className="panel-head">
-        <span>Biomarker pace · Q2 2026</span>
-        <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>What this means this week · click for action</span>
+    <div style={{ background: T.surface, borderRadius: 14, overflow: "hidden", marginBottom: 56 }}>
+      {/* Header */}
+      <div style={{
+        padding: "20px 28px", borderBottom: `1px solid ${T.border}`,
+        display: "flex", justifyContent: "space-between", alignItems: "baseline",
+      }}>
+        <span style={{ fontFamily: T.sans, fontSize: 16, fontWeight: 500, color: T.ink }}>
+          Biomarker pace · Q2 2026
+        </span>
+        <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3 }}>
+          Click for this week's action
+        </span>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: "var(--hair)" }}>
-        {BIOMARKER_PACE.map(bm => {
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+        {BIOMARKER_PACE.map((bm, idx) => {
           const ps = PACE_STYLE[bm.status]
           const isSelected = selected === bm.name
+          const isRight = idx % 2 === 1
+          const isBottom = idx >= 2
+
           return (
             <div
               key={bm.name}
               onClick={() => setSelected(isSelected ? null : bm.name)}
-              style={{ background: isSelected ? "var(--panel-2)" : "var(--bg)", cursor: "pointer", borderLeft: isSelected ? `3px solid ${ps.color}` : "3px solid transparent" }}
+              style={{
+                background: isSelected ? T.surfaceRaised : "transparent",
+                cursor: "pointer",
+                borderLeft: isSelected ? `3px solid ${ps.color}` : `3px solid transparent`,
+                borderRight: isRight ? "none" : `1px solid ${T.border}`,
+                borderBottom: isBottom ? "none" : `1px solid ${T.border}`,
+                transition: "all 0.15s ease",
+              }}
             >
-              {/* Summary row */}
-              <div style={{ padding: "20px 22px 16px" }}>
+              {/* Summary */}
+              <div style={{ padding: "20px 24px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
                   <div>
-                    <div style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-3)", marginBottom: 4 }}>{bm.name}</div>
-                    <div style={{ fontFamily: "var(--mono)", fontSize: 24, letterSpacing: "-0.03em", color: "var(--ink)", lineHeight: 1 }}>
-                      {bm.current} <span style={{ fontSize: 10, color: "var(--ink-3)", letterSpacing: 0 }}>{bm.unit}</span>
+                    <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3, marginBottom: 4 }}>{bm.name}</div>
+                    <div style={{ fontFamily: T.mono, fontSize: 24, letterSpacing: "-0.03em", color: T.ink, lineHeight: 1 }}>
+                      {bm.current} <span style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3 }}>{bm.unit}</span>
                     </div>
                   </div>
                   <div style={{ textAlign: "right" }}>
-                    <div style={{ fontFamily: "var(--mono)", fontSize: 8, padding: "3px 8px", border: `1px solid ${ps.color}`, color: ps.color, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>{ps.label}</div>
-                    <div style={{ fontFamily: "var(--mono)", fontSize: 8, color: "var(--ink-4)" }}>Target: {bm.target}</div>
+                    <span style={{
+                      display: "inline-flex", alignItems: "center", gap: 5,
+                      fontFamily: T.sans, fontSize: 11, fontWeight: 500,
+                      color: ps.color, padding: "3px 10px",
+                      background: ps.bg, borderRadius: 20, marginBottom: 6,
+                    }}>
+                      <span style={{ width: 5, height: 5, borderRadius: "50%", background: ps.color }} />
+                      {ps.label}
+                    </span>
+                    <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink4, marginTop: 4 }}>
+                      Target: {bm.target}
+                    </div>
                   </div>
                 </div>
-                <div style={{ fontSize: 12, color: "var(--ink-3)", lineHeight: 1.55 }}>{bm.verdict}</div>
+                <div style={{ fontFamily: T.sans, fontSize: 13, color: T.ink3, lineHeight: 1.6 }}>
+                  {bm.verdict}
+                </div>
               </div>
 
               {/* Expanded action view */}
               {isSelected && (
-                <div style={{ padding: "0 22px 22px", borderTop: "1px solid var(--hair)" }}>
+                <div style={{ padding: "0 24px 24px", borderTop: `1px solid ${T.border}` }}>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, paddingTop: 16 }}>
                     <div>
-                      <div style={{ fontFamily: "var(--mono)", fontSize: 7.5, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-4)", marginBottom: 8 }}>What this means this week</div>
-                      <p style={{ fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.65, margin: 0 }}>{bm.thisWeek}</p>
+                      <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink4, marginBottom: 8, fontWeight: 500 }}>
+                        What this means this week
+                      </div>
+                      <p style={{ fontFamily: T.sans, fontSize: 13, color: T.ink2, lineHeight: 1.65, margin: 0 }}>
+                        {bm.thisWeek}
+                      </p>
                     </div>
                     <div style={{ borderLeft: `2px solid ${ps.color}`, paddingLeft: 16 }}>
-                      <div style={{ fontFamily: "var(--mono)", fontSize: 7.5, textTransform: "uppercase", letterSpacing: "0.1em", color: ps.color, marginBottom: 8 }}>Action</div>
-                      <p style={{ fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.65, margin: 0 }}>{bm.action}</p>
+                      <div style={{ fontFamily: T.sans, fontSize: 11, color: ps.color, marginBottom: 8, fontWeight: 500 }}>
+                        Action
+                      </div>
+                      <p style={{ fontFamily: T.sans, fontSize: 13, color: T.ink2, lineHeight: 1.65, margin: 0 }}>
+                        {bm.action}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -124,42 +163,45 @@ function BiomarkerPace() {
 // ─── Medical Roadmap ─────────────────────────────────────────────────────────
 
 const MILESTONES = [
-  { label: "Today",                    date: "20 Apr",  daysOut: 0,  type: "today",    note: null },
-  { label: "DEXA + VO₂max retest",    date: "22 Apr",  daysOut: 2,  type: "test",     note: "Fasted from 20:30 Tue · West Clinic 08:30" },
-  { label: "Quarterly protocol review",date: "29 Apr",  daysOut: 9,  type: "coaching", note: "In person · 60 min · Darcy O'Sullivan" },
-  { label: "Full quarterly bloods",    date: "06 May",  daysOut: 16, type: "blood",    note: "Phlebotomist visit · fasted" },
-  { label: "Cardiology consult",       date: "12 May",  daysOut: 22, type: "medical",  note: "Dr. Sanjay Rao, MD · video" },
-  { label: "Q3 bloods · ApoB target", date: "02 Jul",  daysOut: 73, type: "target",   note: "ApoB ≤ 70 mg/dL · Fibrinogen < 320 mg/dL" },
+  { label: "Today",                     date: "20 Apr",  daysOut: 0,  type: "today",    note: null },
+  { label: "DEXA + VO₂max retest",     date: "22 Apr",  daysOut: 2,  type: "test",     note: "Fasted from 20:30 Tue · West Clinic 08:30" },
+  { label: "Quarterly protocol review", date: "29 Apr",  daysOut: 9,  type: "coaching", note: "In person · 60 min · Darcy O'Sullivan" },
+  { label: "Full quarterly bloods",     date: "06 May",  daysOut: 16, type: "blood",    note: "Phlebotomist visit · fasted" },
+  { label: "Cardiology consult",        date: "12 May",  daysOut: 22, type: "medical",  note: "Dr. Sanjay Rao, MD · video" },
+  { label: "Q3 bloods · ApoB target",  date: "02 Jul",  daysOut: 73, type: "target",   note: "ApoB ≤ 70 mg/dL · Fibrinogen < 320 mg/dL" },
 ]
 
 const MILESTONE_COLORS: Record<string, string> = {
-  today:    "var(--ink)",
-  test:     "var(--warn)",
-  coaching: "var(--ok)",
+  today:    T.ink,
+  test:     T.warn,
+  coaching: T.ok,
   blood:    "#9B8FA9",
-  medical:  "var(--warn)",
-  target:   "var(--ok)",
+  medical:  T.warn,
+  target:   T.ok,
 }
 
 function MedicalRoadmap() {
   const [hovered, setHovered] = useState<number | null>(null)
-  const totalDays = 73 // span to Jul 2
+  const totalDays = 73
 
   return (
-    <div className="panel">
-      <div className="panel-head">
-        <span>Medical roadmap · Q2 2026</span>
-        <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-          Next 73 days · key milestones
+    <div style={{ background: T.surface, borderRadius: 14, overflow: "hidden", marginBottom: 56 }}>
+      <div style={{
+        padding: "20px 28px", borderBottom: `1px solid ${T.border}`,
+        display: "flex", justifyContent: "space-between", alignItems: "baseline",
+      }}>
+        <span style={{ fontFamily: T.sans, fontSize: 16, fontWeight: 500, color: T.ink }}>
+          Medical roadmap · Q2 2026
+        </span>
+        <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3 }}>
+          Next 73 days
         </span>
       </div>
 
-      {/* Timeline track */}
-      <div style={{ padding: "24px 32px 10px" }}>
-        <div style={{ position: "relative", height: 4, background: "var(--hair-strong)", borderRadius: 2 }}>
-          {/* Progress fill */}
-          <div style={{ position: "absolute", left: 0, top: 0, height: "100%", width: "2.7%", background: "var(--ink)", borderRadius: 2 }} />
-
+      <div style={{ padding: "28px 36px 16px" }}>
+        {/* Timeline track */}
+        <div style={{ position: "relative", height: 4, background: T.borderMed, borderRadius: 2 }}>
+          <div style={{ position: "absolute", left: 0, top: 0, height: "100%", width: "2.7%", background: T.ink, borderRadius: 2 }} />
           {MILESTONES.map((m, i) => {
             const pct = (m.daysOut / totalDays) * 100
             const color = MILESTONE_COLORS[m.type]
@@ -171,10 +213,9 @@ function MedicalRoadmap() {
                 style={{ position: "absolute", left: `${pct}%`, top: "50%", transform: "translate(-50%, -50%)", cursor: "default" }}
               >
                 <div style={{
-                  width: m.type === "today" ? 10 : 12,
-                  height: m.type === "today" ? 10 : 12,
+                  width: 12, height: 12,
                   borderRadius: m.type === "target" ? 0 : "50%",
-                  background: m.type === "today" ? "var(--ink)" : "var(--bg)",
+                  background: m.type === "today" ? T.ink : T.bg,
                   border: `2px solid ${color}`,
                   transform: m.type === "target" ? "rotate(45deg)" : undefined,
                 }} />
@@ -184,7 +225,7 @@ function MedicalRoadmap() {
         </div>
 
         {/* Labels row */}
-        <div style={{ position: "relative", height: 52, marginTop: 6 }}>
+        <div style={{ position: "relative", height: 56, marginTop: 8 }}>
           {MILESTONES.map((m, i) => {
             const pct = (m.daysOut / totalDays) * 100
             const color = MILESTONE_COLORS[m.type]
@@ -195,25 +236,24 @@ function MedicalRoadmap() {
                 onMouseEnter={() => setHovered(i)}
                 onMouseLeave={() => setHovered(null)}
                 style={{
-                  position: "absolute",
-                  left: `${pct}%`,
+                  position: "absolute", left: `${pct}%`,
                   transform: "translateX(-50%)",
                   display: "flex", flexDirection: "column", alignItems: "center",
                   width: 90,
                 }}
               >
-                <div style={{ fontFamily: "var(--mono)", fontSize: 8, color: isHovered ? color : "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.06em", textAlign: "center", lineHeight: 1.3 }}>
+                <div style={{ fontFamily: T.mono, fontSize: 10, color: isHovered ? color : T.ink3, textAlign: "center", lineHeight: 1.3 }}>
                   {m.date}
                 </div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 7.5, color: isHovered ? "var(--ink)" : "var(--ink-4)", textAlign: "center", lineHeight: 1.3, marginTop: 2 }}>
+                <div style={{ fontFamily: T.sans, fontSize: 10, color: isHovered ? T.ink : T.ink4, textAlign: "center", lineHeight: 1.3, marginTop: 2 }}>
                   {m.label}
                 </div>
                 {isHovered && m.note && (
                   <div style={{
                     position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)",
-                    marginTop: 6, background: "var(--panel-2)", border: `1px solid ${color}`,
-                    padding: "6px 10px", fontFamily: "var(--mono)", fontSize: 8.5, color: "var(--ink-2)",
-                    whiteSpace: "nowrap", zIndex: 10, lineHeight: 1.4,
+                    marginTop: 6, background: T.surfaceRaised, border: `1px solid ${color}`,
+                    padding: "6px 10px", fontFamily: T.sans, fontSize: 11, color: T.ink2,
+                    whiteSpace: "nowrap", zIndex: 10, lineHeight: 1.4, borderRadius: 6,
                   }}>
                     {m.note}
                   </div>
@@ -225,32 +265,29 @@ function MedicalRoadmap() {
       </div>
 
       {/* Target progress rails */}
-      <div style={{ borderTop: "1px solid var(--hair)", padding: "16px 24px", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 0 }}>
+      <div style={{ borderTop: `1px solid ${T.border}`, padding: "16px 0", display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
         {DATA.vision.tracks.map((track, i) => {
           const pct = Math.round(track.progress * 100)
           const isDown = track.dir === "down"
-          const color = pct >= 60 ? "var(--ok)" : pct >= 30 ? "var(--warn)" : "var(--alert)"
+          const color = pct >= 60 ? T.ok : pct >= 30 ? T.warn : T.alert
           return (
-            <div key={track.name} style={{ padding: "10px 16px", borderRight: i < 3 ? "1px solid var(--hair)" : undefined }}>
-              <div style={{ fontFamily: "var(--mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-3)", marginBottom: 6 }}>
+            <div key={track.name} style={{ padding: "10px 20px", borderRight: i < 3 ? `1px solid ${T.border}` : undefined }}>
+              <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3, marginBottom: 6 }}>
                 {track.name}
               </div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
-                <span style={{ fontFamily: "var(--mono)", fontSize: 18, color: "var(--ink)", letterSpacing: "-0.02em" }}>
+                <span style={{ fontFamily: T.mono, fontSize: 20, color: T.ink, letterSpacing: "-0.02em" }}>
                   {track.now}
                 </span>
-                <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)" }}>{track.unit}</span>
-                <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-4)" }}>
+                <span style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3 }}>{track.unit}</span>
+                <span style={{ fontFamily: T.sans, fontSize: 11, color: T.ink4 }}>
                   {isDown ? "↓" : "↑"} {track.target}
                 </span>
               </div>
-              {/* Progress rail */}
-              <div style={{ height: 3, background: "var(--hair-strong)", borderRadius: 1, marginBottom: 4 }}>
-                <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: 1 }} />
+              <div style={{ height: 4, background: T.border, borderRadius: 2, marginBottom: 4, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: 2 }} />
               </div>
-              <div style={{ fontFamily: "var(--mono)", fontSize: 8, color }}>
-                {pct}% to target
-              </div>
+              <div style={{ fontFamily: T.sans, fontSize: 11, color }}>{pct}% to target</div>
             </div>
           )
         })}
@@ -259,29 +296,19 @@ function MedicalRoadmap() {
   )
 }
 
-function FlagDot({ flag }: { flag: string | null }) {
-  if (!flag) return null
-  return (
-    <span style={{
-      display: "inline-block",
-      width: 6,
-      height: 6,
-      borderRadius: "50%",
-      background: flag === "alert" ? "var(--alert)" : "var(--warn)",
-      marginRight: 6,
-      flexShrink: 0,
-      marginTop: 1,
-    }} />
-  )
-}
-
 function InfoModal({ why, action, marker }: { why: string; action: string; marker: string }) {
   const [open, setOpen] = useState(false)
   return (
     <div style={{ position: "relative", display: "inline-block" }}>
       <button
-        className="info-btn"
         onClick={() => setOpen(o => !o)}
+        style={{
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
+          width: 16, height: 16, borderRadius: "50%",
+          border: `1px solid ${T.borderMed}`,
+          fontFamily: T.sans, fontSize: 9, color: T.ink3,
+          cursor: "pointer", flexShrink: 0,
+        }}
         title={`Why ${marker} is flagged`}
       >
         i
@@ -289,10 +316,20 @@ function InfoModal({ why, action, marker }: { why: string; action: string; marke
       {open && (
         <>
           <div style={{ position: "fixed", inset: 0, zIndex: 19 }} onClick={() => setOpen(false)} />
-          <div className="info-popover" style={{ top: 20, right: 0, zIndex: 20 }}>
-            <div className="info-title">{marker} · why flagged</div>
+          <div style={{
+            position: "absolute", top: 20, right: 0, zIndex: 20,
+            background: T.surfaceRaised, border: `1px solid ${T.borderMed}`,
+            padding: "12px 14px", width: 260, borderRadius: 10,
+            fontFamily: T.sans, fontSize: 12, color: T.ink2, lineHeight: 1.6,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+          }}>
+            <div style={{ fontFamily: T.sans, fontSize: 11, fontWeight: 500, color: T.ink, marginBottom: 6 }}>
+              {marker} · why flagged
+            </div>
             <div>{why}</div>
-            <div className="info-action">{action}</div>
+            <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${T.border}`, fontFamily: T.sans, fontSize: 11, color: T.accent }}>
+              {action}
+            </div>
           </div>
         </>
       )}
@@ -312,16 +349,16 @@ function LabRail({ points, range, target, unit }: {
     <div style={{ height: 80, width: "100%" }}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -24 }}>
-          <XAxis dataKey="name" tick={{ fontFamily: "var(--mono)", fontSize: 8, fill: "var(--ink-3)" }} tickLine={false} axisLine={false} />
-          <YAxis domain={[lo, hi]} tick={{ fontFamily: "var(--mono)", fontSize: 8, fill: "var(--ink-3)" }} tickLine={false} axisLine={false} />
+          <XAxis dataKey="name" tick={{ fontFamily: T.sans, fontSize: 10, fill: T.ink3 }} tickLine={false} axisLine={false} />
+          <YAxis domain={[lo, hi]} tick={{ fontFamily: T.mono, fontSize: 9, fill: T.ink3 }} tickLine={false} axisLine={false} />
           <Tooltip
-            contentStyle={{ background: "var(--panel-2)", border: "1px solid var(--hair-strong)", borderRadius: 0, fontFamily: "var(--mono)", fontSize: 9 }}
+            contentStyle={{ background: T.surfaceRaised, border: `1px solid ${T.borderMed}`, borderRadius: 8, fontFamily: T.sans, fontSize: 11 }}
             formatter={(v) => [`${v} ${unit}`, ""]}
-            labelStyle={{ color: "var(--ink-3)" }}
-            itemStyle={{ color: "var(--ink)" }}
+            labelStyle={{ color: T.ink3 }}
+            itemStyle={{ color: T.ink }}
           />
-          <ReferenceLine y={target} stroke="var(--ok)" strokeDasharray="3 3" strokeWidth={1} />
-          <Line type="monotone" dataKey="value" stroke="var(--accent)" strokeWidth={1.5} dot={{ r: 2, fill: "var(--accent)", strokeWidth: 0 }} />
+          <ReferenceLine y={target} stroke={T.ok} strokeDasharray="3 3" strokeWidth={1} />
+          <Line type="monotone" dataKey="value" stroke={T.accent} strokeWidth={1.5} dot={{ r: 2, fill: T.accent, strokeWidth: 0 }} />
         </LineChart>
       </ResponsiveContainer>
     </div>
@@ -339,121 +376,150 @@ export default function MedicalPage() {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: "24px 32px", maxWidth: 1100 }}>
+    <div style={{ padding: "48px 48px 80px", maxWidth: 960, margin: "0 auto" }}>
 
       {/* Page header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", paddingBottom: 16, borderBottom: "1px solid var(--hair)" }}>
-        <div>
-          <h1 style={{ fontFamily: "var(--serif)", fontSize: 34, fontWeight: 300, letterSpacing: "-0.02em", color: "var(--ink)", margin: 0, lineHeight: 1 }}>Medical.</h1>
-          <div style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--ink-3)", marginTop: 8 }}>
-            Last draw {pathology.lastDraw} · Next scheduled {pathology.nextDraw} · {DATA.user.last.toUpperCase()}, {DATA.user.first.toUpperCase()} · DOB 04 Nov 1971
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: 0, position: "relative" }}>
-          <button
-            onClick={handleShare}
-            style={{ fontFamily: "var(--mono)", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", border: "1px solid var(--hair-strong)", borderRight: 0, padding: "9px 16px", color: "var(--ink-2)", background: "transparent", cursor: "pointer" }}
-          >
-            Share with clinician
-          </button>
-          <button
-            style={{ fontFamily: "var(--mono)", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", border: "1px solid var(--hair-strong)", borderRight: 0, padding: "9px 16px", color: "var(--ink-2)", background: "transparent", cursor: "pointer" }}
-          >
-            Export PDF
-          </button>
-          <button
-            style={{ fontFamily: "var(--mono)", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", border: "1px solid var(--ink)", padding: "9px 16px", background: "var(--ink)", color: "var(--bg)", cursor: "pointer" }}
-          >
-            Generate quarterly report
-          </button>
-          {shareToast && (
-            <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, background: "var(--panel-2)", border: "1px solid var(--hair-strong)", padding: "8px 14px", fontFamily: "var(--mono)", fontSize: 10, color: "var(--ok)", letterSpacing: "0.08em", textTransform: "uppercase", whiteSpace: "nowrap", zIndex: 10 }}>
-              Draft prepared for Dr. Sanjay Rao · review before sending
+      <div style={{ marginBottom: 56 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+          <div>
+            <h1 style={{ fontFamily: T.serif, fontSize: 28, fontWeight: 300, letterSpacing: "-0.02em", color: T.ink, margin: 0, lineHeight: 1.2 }}>
+              Medical overview
+            </h1>
+            <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3, marginTop: 8 }}>
+              Last draw {pathology.lastDraw} · Next scheduled {pathology.nextDraw} · {DATA.user.first} {DATA.user.last}
             </div>
-          )}
+          </div>
+          <div style={{ display: "flex", gap: 8, position: "relative" }}>
+            <button
+              onClick={handleShare}
+              style={{
+                fontFamily: T.sans, fontSize: 13, border: `1px solid ${T.borderMed}`,
+                padding: "8px 16px", color: T.ink2, background: "transparent",
+                cursor: "pointer", borderRadius: 8,
+              }}
+            >
+              Share with clinician
+            </button>
+            <button style={{
+              fontFamily: T.sans, fontSize: 13, border: `1px solid ${T.borderMed}`,
+              padding: "8px 16px", color: T.ink2, background: "transparent",
+              cursor: "pointer", borderRadius: 8,
+            }}>
+              Export PDF
+            </button>
+            <button style={{
+              fontFamily: T.sans, fontSize: 13, fontWeight: 500,
+              padding: "8px 18px", background: T.ok, color: T.bg,
+              border: "none", cursor: "pointer", borderRadius: 8,
+            }}>
+              Quarterly report
+            </button>
+            {shareToast && (
+              <div style={{
+                position: "absolute", top: "calc(100% + 8px)", right: 0,
+                background: T.surfaceRaised, border: `1px solid ${T.okMuted}`,
+                padding: "8px 14px", fontFamily: T.sans, fontSize: 12, color: T.ok,
+                whiteSpace: "nowrap", zIndex: 10, borderRadius: 8,
+              }}>
+                Draft prepared for Dr. Sanjay Rao · review before sending
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Biomarker pace — action view, not reporting */}
+      {/* Biomarker pace */}
       <BiomarkerPace />
 
       {/* Medical roadmap */}
       <MedicalRoadmap />
 
       {/* Risk strip */}
-      <div style={{ display: "flex", gap: 0, borderTop: 0 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 56 }}>
         {[
-          { l: "Risk profile", v: DATA.user.risk, color: "var(--warn)" },
-          { l: "Last draw", v: pathology.lastDraw, color: "var(--ink)" },
-          { l: "Next draw", v: pathology.nextDraw, color: "var(--ink)" },
+          { l: "Risk profile", v: DATA.user.risk, color: T.warn },
+          { l: "Last draw",    v: pathology.lastDraw, color: T.ink },
+          { l: "Next draw",    v: pathology.nextDraw, color: T.ink },
         ].map(({ l, v, color }) => (
-          <div key={l} className="panel" style={{ flex: 1, padding: "12px 16px", borderRight: 0 }}>
-            <div style={{ fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-3)" }}>{l}</div>
-            <div style={{ fontFamily: l === "Risk profile" ? "var(--serif)" : "var(--mono)", fontSize: 12, color, marginTop: 4, fontStyle: l === "Risk profile" ? "italic" : "normal" }}>{v}</div>
+          <div key={l} style={{ background: T.surface, borderRadius: 10, padding: "14px 18px" }}>
+            <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3, marginBottom: 4 }}>{l}</div>
+            <div style={{
+              fontFamily: l === "Risk profile" ? T.serif : T.mono,
+              fontSize: 12, color, marginTop: 4,
+              fontStyle: l === "Risk profile" ? "italic" : "normal",
+            }}>{v}</div>
           </div>
         ))}
       </div>
 
       {/* Lab panels */}
       {pathology.panels.map(panel => (
-        <div key={panel.group} className="panel">
+        <div key={panel.group} style={{ background: T.surface, borderRadius: 12, overflow: "hidden", marginBottom: 16 }}>
           <div
-            className="panel-head"
-            style={{ cursor: "pointer" }}
+            style={{
+              padding: "16px 24px", borderBottom: `1px solid ${T.border}`,
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              cursor: "pointer", fontFamily: T.sans, fontSize: 15, fontWeight: 500, color: T.ink,
+            }}
             onClick={() => setOpenGroup(openGroup === panel.group ? null : panel.group)}
           >
             <span>{panel.group}</span>
-            <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3 }}>
               {panel.rows.filter(r => r.flag).length > 0
                 ? `${panel.rows.filter(r => r.flag).length} flagged`
                 : "All clear"} · {openGroup === panel.group ? "collapse" : "expand"}
             </span>
           </div>
-          <div className="labs">
+
+          {(openGroup === panel.group || openGroup === null) && (
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr>
                   {["Marker", "Value", "Range", "Previous", "Trend"].map(h => (
-                    <th key={h} style={{ padding: "8px 14px", fontFamily: "var(--mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-3)", fontWeight: 400, borderBottom: "1px solid var(--hair-strong)", textAlign: h === "Marker" ? "left" : "right" }}>{h}</th>
+                    <th key={h} style={{
+                      padding: "10px 16px", fontFamily: T.sans, fontSize: 11, fontWeight: 500,
+                      color: T.ink3, borderBottom: `1px solid ${T.borderMed}`,
+                      textAlign: h === "Marker" ? "left" : "right",
+                    }}>{h}</th>
                   ))}
-                  <th style={{ width: 24, borderBottom: "1px solid var(--hair-strong)" }} />
+                  <th style={{ width: 24, borderBottom: `1px solid ${T.borderMed}` }} />
                 </tr>
               </thead>
               <tbody>
                 {panel.rows.map(row => {
                   const inRange = row.value >= row.range[0] && row.value <= row.range[1]
                   return (
-                    <tr key={row.marker}>
-                      <td style={{ padding: "10px 14px", borderBottom: "1px solid var(--hair)", verticalAlign: "middle" }}>
+                    <tr key={row.marker} style={{ background: row.flag ? T.warnSubtle : undefined }}>
+                      <td style={{ padding: "12px 16px", borderBottom: `1px solid ${T.border}`, verticalAlign: "middle" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                           {row.flag && (
                             <span style={{
                               display: "inline-block", width: 6, height: 6,
-                              background: row.flag === "alert" ? "var(--alert)" : "var(--warn)",
+                              background: row.flag === "alert" ? T.alert : T.warn,
                               borderRadius: "50%", flexShrink: 0,
                             }} />
                           )}
                           <div>
-                            <div style={{ fontFamily: "var(--mono)", fontSize: 11, color: row.flag ? (row.flag === "alert" ? "var(--alert)" : "var(--warn)") : "var(--ink)" }}>
+                            <div style={{ fontFamily: T.sans, fontSize: 13, fontWeight: 500, color: row.flag ? (row.flag === "alert" ? T.alert : T.warn) : T.ink }}>
                               {row.marker}
                             </div>
-                            <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", marginTop: 1 }}>{row.full}</div>
+                            <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3, marginTop: 1 }}>{row.full}</div>
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: "10px 14px", textAlign: "right", borderBottom: "1px solid var(--hair)", fontFamily: "var(--mono)", fontSize: 13, color: inRange ? "var(--ink)" : row.flag === "alert" ? "var(--alert)" : "var(--warn)", verticalAlign: "middle" }}>
-                        {row.value} <span style={{ fontSize: 9, color: "var(--ink-3)" }}>{row.unit}</span>
+                      <td style={{ padding: "12px 16px", textAlign: "right", borderBottom: `1px solid ${T.border}`, fontFamily: T.mono, fontSize: 15, color: inRange ? T.ink : row.flag === "alert" ? T.alert : T.warn, verticalAlign: "middle" }}>
+                        {row.value} <span style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3 }}>{row.unit}</span>
                       </td>
-                      <td style={{ padding: "10px 14px", textAlign: "right", borderBottom: "1px solid var(--hair)", fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-3)", verticalAlign: "middle" }}>
+                      <td style={{ padding: "12px 16px", textAlign: "right", borderBottom: `1px solid ${T.border}`, fontFamily: T.mono, fontSize: 11, color: T.ink3, verticalAlign: "middle" }}>
                         {row.range[0]}–{row.range[1]} {row.unit}
                       </td>
-                      <td style={{ padding: "10px 14px", textAlign: "right", borderBottom: "1px solid var(--hair)", fontFamily: "var(--mono)", fontSize: 11, color: "var(--ink-2)", verticalAlign: "middle" }}>
-                        {row.prev} <span style={{ fontSize: 9, color: "var(--ink-3)" }}>{row.unit}</span>
+                      <td style={{ padding: "12px 16px", textAlign: "right", borderBottom: `1px solid ${T.border}`, fontFamily: T.mono, fontSize: 11, color: T.ink2, verticalAlign: "middle" }}>
+                        {row.prev} <span style={{ fontFamily: T.sans, fontSize: 10, color: T.ink3 }}>{row.unit}</span>
                       </td>
-                      <td style={{ padding: "10px 14px", textAlign: "right", borderBottom: "1px solid var(--hair)", fontFamily: "var(--mono)", fontSize: 11, color: "var(--ink-2)", verticalAlign: "middle" }}>
+                      <td style={{ padding: "12px 16px", textAlign: "right", borderBottom: `1px solid ${T.border}`, fontFamily: T.mono, fontSize: 11, color: T.ink2, verticalAlign: "middle" }}>
                         {row.trend}
                       </td>
-                      <td style={{ padding: "10px 14px", borderBottom: "1px solid var(--hair)", verticalAlign: "middle", textAlign: "center" }}>
+                      <td style={{ padding: "12px 16px", borderBottom: `1px solid ${T.border}`, verticalAlign: "middle", textAlign: "center" }}>
                         {row.flag && row.why && row.action && (
                           <InfoModal why={row.why} action={row.action} marker={row.marker} />
                         )}
@@ -463,24 +529,33 @@ export default function MedicalPage() {
                 })}
               </tbody>
             </table>
-          </div>
+          )}
         </div>
       ))}
 
-      {/* Path timeline */}
-      <div className="panel">
-        <div className="panel-head">
-          <span>Pathology trajectory</span>
-          <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-            4-quarter · dashed line = target
+      {/* Pathology trajectory */}
+      <div style={{ background: T.surface, borderRadius: 12, overflow: "hidden", marginTop: 40 }}>
+        <div style={{
+          padding: "16px 24px", borderBottom: `1px solid ${T.border}`,
+          display: "flex", justifyContent: "space-between", alignItems: "baseline",
+        }}>
+          <span style={{ fontFamily: T.sans, fontSize: 15, fontWeight: 500, color: T.ink }}>
+            Pathology trajectory
+          </span>
+          <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3 }}>
+            4 quarters · dashed line = target
           </span>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", borderLeft: "1px solid var(--hair)" }}>
-          {pathology.timeline.map(item => (
-            <div key={item.marker} style={{ borderRight: "1px solid var(--hair)", borderBottom: "1px solid var(--hair)", padding: "14px 16px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)" }}>
+          {pathology.timeline.map((item, i) => (
+            <div key={item.marker} style={{
+              borderRight: i % 3 < 2 ? `1px solid ${T.border}` : undefined,
+              borderBottom: i < 3 ? `1px solid ${T.border}` : undefined,
+              padding: "16px 20px",
+            }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink-2)" }}>{item.marker}</div>
-                <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--ink-3)" }}>
+                <div style={{ fontFamily: T.sans, fontSize: 13, color: T.ink2 }}>{item.marker}</div>
+                <div style={{ fontFamily: T.sans, fontSize: 11, color: T.ink3 }}>
                   target {item.target} {item.unit}
                 </div>
               </div>
@@ -494,7 +569,6 @@ export default function MedicalPage() {
           ))}
         </div>
       </div>
-
     </div>
   )
 }
