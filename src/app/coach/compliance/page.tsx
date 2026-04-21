@@ -229,26 +229,58 @@ function adColor(v: number | null): string {
 const FLAGS = [
   {
     id: "zone2-volume",
-    severity: "warn" as const,
     label: "Zone-2 volume below target",
     detail: "82/160 min this week (51%). Board-cycle context noted. Action: confirm hold-intensity until DEXA results; resume full volume next week.",
-    action: "Confirm with Jamie",
   },
   {
     id: "fibre-adherence",
-    severity: "warn" as const,
     label: "Fibre adherence below ApoB threshold",
     detail: "86% vs 89% target. Small gap, but sustained for 3 weeks. ApoB Q3 target at risk if not corrected. Consider pushing an evening reminder.",
-    action: "Push reminder",
   },
   {
     id: "sleep-nights",
-    severity: "info" as const,
     label: "2 non-adherent sleep nights this week",
     detail: "Sun and Tue linked to late board prep sessions. Sleep onset delayed ~40 min. HRV impact visible in overnight data. Not a flag yet — watch next week.",
-    action: "Monitor",
   },
 ]
+
+type FlagStatus = "raised" | "triaged" | "resolved"
+interface FlagState { status: FlagStatus; action?: string }
+
+function LifecycleTrack({ status }: { status: FlagStatus }) {
+  const steps: { key: FlagStatus; label: string }[] = [
+    { key: "raised",   label: "Raised" },
+    { key: "triaged",  label: "Triaged" },
+    { key: "resolved", label: "Resolved" },
+  ]
+  const idx = steps.findIndex(s => s.key === status)
+  const stepColor = (i: number) => i <= idx ? (status === "resolved" ? T.ok : status === "triaged" ? T.ink2 : T.warn) : T.ink4
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+      {steps.map((step, i) => (
+        <div key={step.key} style={{ display: "flex", alignItems: "center" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+            <div style={{
+              width: 8, height: 8, borderRadius: "50%",
+              background: i <= idx ? stepColor(i) : "transparent",
+              border: `1.5px solid ${stepColor(i)}`,
+            }} />
+            <span style={{ fontFamily: T.sans, fontSize: 10, color: stepColor(i), whiteSpace: "nowrap" }}>
+              {step.label}
+            </span>
+          </div>
+          {i < steps.length - 1 && (
+            <div style={{
+              width: 28, height: 1.5,
+              background: i < idx ? stepColor(i) : T.ink4,
+              marginBottom: 16,
+            }} />
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
 
 const quarterScore = Math.round(
   PROTOCOLS.reduce((sum, p) => sum + p.rate, 0) / PROTOCOLS.length * 100
@@ -257,11 +289,52 @@ const quarterScore = Math.round(
 export default function CoachCompliancePage() {
   const [selectedProtocol, setSelectedProtocol] = useState<string | null>(null)
   const [dismissedFlags, setDismissedFlags] = useState<string[]>([])
+  const [flagStates, setFlagStates] = useState<Record<string, FlagState>>(
+    () => Object.fromEntries(FLAGS.map(f => [f.id, { status: "raised" as FlagStatus }]))
+  )
+  const [toast, setToast] = useState<string | null>(null)
+
+  function showToast(msg: string) {
+    setToast(msg)
+    setTimeout(() => setToast(null), 3000)
+  }
+
+  function triageFlag(flagId: string, action: string) {
+    setFlagStates(prev => ({ ...prev, [flagId]: { status: "triaged", action } }))
+    const msgs: Record<string, string> = {
+      Act: "Corrector created — Jamie will see it after Darcy signs",
+      "Notify Jamie": "Message sent to Jamie's feed",
+      Watch: "Re-evaluating in 24 h — flag marked as watched",
+    }
+    showToast(msgs[action] ?? `Flag triaged via ${action}`)
+  }
+
+  function resolveFlag(flagId: string) {
+    setFlagStates(prev => ({ ...prev, [flagId]: { ...prev[flagId], status: "resolved" } }))
+    showToast("Flag resolved")
+  }
 
   const activeFlags = FLAGS.filter(f => !dismissedFlags.includes(f.id))
+  const raisedCount = activeFlags.filter(f => flagStates[f.id]?.status === "raised").length
+
+  const barColor = (status: FlagStatus) =>
+    status === "resolved" ? T.ok : status === "triaged" ? T.ink2 : T.warn
 
   return (
     <div style={{ padding: "48px 48px 80px", maxWidth: 1200, margin: "0 auto", display: "flex", flexDirection: "column", gap: 56 }}>
+
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: "fixed", bottom: 28, right: 28, zIndex: 100,
+          background: T.surfaceRaised, border: `1px solid ${T.borderMed}`,
+          padding: "10px 16px", borderRadius: 10,
+          fontFamily: T.sans, fontSize: 13, color: T.ink2,
+          boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+        }}>
+          {toast}
+        </div>
+      )}
 
       {/* Header */}
       <div>
@@ -289,27 +362,87 @@ export default function CoachCompliancePage() {
         <div style={{ background: T.surface, borderRadius: 12 }}>
           <div style={{ padding: "16px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 600, color: T.ink }}>Attention required</span>
-            <span style={{ fontFamily: T.sans, fontSize: 12, color: T.warn, fontWeight: 500 }}>{activeFlags.length} open</span>
+            <span style={{ fontFamily: T.sans, fontSize: 12, color: T.warn, fontWeight: 500 }}>{raisedCount} open</span>
           </div>
-          {activeFlags.map((flag, i) => (
-            <div key={flag.id} style={{ display: "flex", alignItems: "stretch", borderTop: i > 0 ? `1px solid ${T.border}` : `1px solid ${T.border}` }}>
-              <div style={{ width: 3, background: flag.severity === "warn" ? T.warn : T.accent, flexShrink: 0 }} />
-              <div style={{ flex: 1, padding: "14px 20px", display: "flex", gap: 16, alignItems: "center" }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 500, color: T.ink, marginBottom: 4 }}>{flag.label}</div>
-                  <div style={{ fontFamily: T.sans, fontSize: 13, color: T.ink3, lineHeight: 1.5 }}>{flag.detail}</div>
-                </div>
-                <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                  <button style={{ fontFamily: T.sans, fontSize: 12, border: `1px solid ${T.warn}`, color: T.warn, padding: "5px 12px", background: "transparent", cursor: "pointer", borderRadius: 6, fontWeight: 500 }}>
-                    {flag.action}
-                  </button>
-                  <button onClick={() => setDismissedFlags(p => [...p, flag.id])} style={{ fontFamily: T.sans, fontSize: 12, border: `1px solid ${T.borderMed}`, color: T.ink3, padding: "5px 12px", background: "transparent", cursor: "pointer", borderRadius: 6 }}>
-                    Dismiss
-                  </button>
+          {activeFlags.map((flag, i) => {
+            const fs = flagStates[flag.id] ?? { status: "raised" as FlagStatus }
+            const isRaised = fs.status === "raised"
+            const isTriaged = fs.status === "triaged"
+            const bc = barColor(fs.status)
+            return (
+              <div key={flag.id} style={{ display: "flex", alignItems: "stretch", borderTop: i > 0 ? `1px solid ${T.border}` : `1px solid ${T.border}` }}>
+                {/* Left color bar */}
+                <div style={{ width: 3, background: bc, flexShrink: 0 }} />
+                <div style={{ flex: 1, padding: "16px 20px 16px 20px" }}>
+                  {/* Top row: label + lifecycle chip */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+                    <div style={{ fontFamily: T.sans, fontSize: 14, fontWeight: 500, color: T.ink }}>{flag.label}</div>
+                    <LifecycleChip status={fs.status} />
+                  </div>
+                  <div style={{ fontFamily: T.sans, fontSize: 13, color: T.ink3, lineHeight: 1.5, marginBottom: 14 }}>{flag.detail}</div>
+
+                  {/* Lifecycle track */}
+                  <div style={{ marginBottom: 14 }}>
+                    <LifecycleTrack status={fs.status} />
+                  </div>
+
+                  {/* Actions */}
+                  {isRaised && (
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <button
+                        onClick={() => triageFlag(flag.id, "Act")}
+                        style={{ fontFamily: T.sans, fontSize: 12, border: `1px solid ${T.warn}`, color: T.warn, padding: "5px 14px", background: "transparent", cursor: "pointer", borderRadius: 6, fontWeight: 500 }}
+                      >
+                        Act
+                      </button>
+                      <button
+                        onClick={() => triageFlag(flag.id, "Notify Jamie")}
+                        style={{ fontFamily: T.sans, fontSize: 12, border: `1px solid ${T.borderMed}`, color: T.ink2, padding: "5px 14px", background: "transparent", cursor: "pointer", borderRadius: 6 }}
+                      >
+                        Notify Jamie
+                      </button>
+                      <button
+                        onClick={() => triageFlag(flag.id, "Watch")}
+                        style={{ fontFamily: T.sans, fontSize: 12, border: `1px solid ${T.borderMed}`, color: T.ink2, padding: "5px 14px", background: "transparent", cursor: "pointer", borderRadius: 6 }}
+                      >
+                        Watch
+                      </button>
+                      <div style={{ flex: 1 }} />
+                      <button
+                        onClick={() => setDismissedFlags(p => [...p, flag.id])}
+                        style={{ fontFamily: T.sans, fontSize: 12, border: `1px solid ${T.borderMed}`, color: T.ink4, padding: "5px 12px", background: "transparent", cursor: "pointer", borderRadius: 6 }}
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  )}
+
+                  {isTriaged && (
+                    <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                      <span style={{ fontFamily: T.sans, fontSize: 12, color: T.ink3 }}>
+                        Triaged via <strong style={{ color: T.ink2 }}>{fs.action}</strong>
+                        {fs.action === "Watch" && (
+                          <span style={{ color: T.ink4 }}> · Re-evaluating Fri 24 Apr</span>
+                        )}
+                      </span>
+                      <button
+                        onClick={() => resolveFlag(flag.id)}
+                        style={{ fontFamily: T.sans, fontSize: 12, border: `1px solid ${T.ok}`, color: T.ok, padding: "5px 14px", background: "transparent", cursor: "pointer", borderRadius: 6, fontWeight: 500 }}
+                      >
+                        Mark resolved
+                      </button>
+                    </div>
+                  )}
+
+                  {fs.status === "resolved" && (
+                    <div style={{ fontFamily: T.sans, fontSize: 12, color: T.ok }}>
+                      Resolved · no further action needed
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
